@@ -1,66 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
+    android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:fitsSystemWindows="true">
-<!-- ############################ TOP APP BAR ######################################-->
+    android:padding="16dp"
+    android:background="@drawable/bottom_sheet_bg">
 
-    <androidx.appcompat.widget.Toolbar
-        android:id="@+id/toolbar"
-        android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:background="@color/white"
-        app:logo="@drawable/logo">
-
-
-        <ImageButton
-            android:id="@+id/btnqr"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:layout_gravity="end"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="QR"
-            android:src="@drawable/qrcode"
-            android:layout_marginEnd="20dp"/>
-
-
-        <ImageButton
-            android:id="@+id/btnSettings"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:layout_gravity="end"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Notification"
-            android:src="@drawable/bell"
-            android:layout_marginEnd="20dp"/>
-
-        <ImageButton
-            android:id="@+id/btnSearch"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
-            android:layout_gravity="end"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:contentDescription="Search"
-            android:src="@drawable/search"
-            android:layout_marginEnd="20dp"/>
-
-    </androidx.appcompat.widget.Toolbar>
-
-<!-- ######################### CONTENT FILL FRAGMENT ############################ -->
-
-
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/fragmentContainerView"
-        android:name="theindustrial.in.News"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1" />
-
-
-<!---  ########################## BOTTOM MENU #################################-->
+<!--  ###################  Inside menu Image buttons ########################### -->
 
     <androidx.appcompat.widget.Toolbar
         android:layout_width="match_parent"
@@ -81,42 +29,18 @@
                 android:gravity="center">
 
                 <ImageButton
-                    android:id="@+id/menu"
-                    android:layout_width="40dp"
-                    android:layout_height="40dp"
-                    android:background="@null"
-                    android:src="@drawable/menu"/>
-
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:text="Menu"
-                    android:textSize="12sp"
-                    android:textColor="@android:color/black"/>
-
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center">
-
-                <ImageButton
-                    android:id="@+id/news"
+                    android:id="@+id/account"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_weight="1"
                     android:background="@null"
-                    android:src="@drawable/news"/>
+                    android:src="@drawable/user"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="News"
+                    android:text="User"
                     android:textSize="12sp"
                     android:textColor="@android:color/black"/>
 
@@ -131,18 +55,18 @@
                 android:gravity="center">
 
                 <ImageButton
-                    android:id="@+id/mags"
+                    android:id="@+id/video"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_weight="1"
                     android:background="@null"
-                    android:src="@drawable/mag2"/>
+                    android:src="@drawable/video"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Magazine"
+                    android:text="Video"
                     android:textSize="12sp"
                     android:textColor="@android:color/black"/>
 
@@ -156,18 +80,18 @@
                 android:gravity="center">
 
                 <ImageButton
-                    android:id="@+id/exclu"
+                    android:id="@+id/orders"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_weight="1"
                     android:background="@null"
-                    android:src="@drawable/exclusive"/>
+                    android:src="@drawable/orders"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Exclusive"
+                    android:text="Orders"
                     android:textSize="12sp"
                     android:textColor="@android:color/black"/>
 
@@ -181,18 +105,18 @@
                 android:gravity="center">
 
                 <ImageButton
-                    android:id="@+id/cart"
+                    android:id="@+id/support"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:layout_weight="1"
                     android:background="@null"
-                    android:src="@drawable/cart"/>
+                    android:src="@drawable/support"/>
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:text="Cart"
+                    android:text="Support"
                     android:textSize="12sp"
                     android:textColor="@android:color/black"/>
 
@@ -201,15 +125,49 @@
 
         </LinearLayout>
 
-
-
-
-
     </androidx.appcompat.widget.Toolbar>
 
 
+<!--   ######################## Favorites and Use Full link Buttons ####################-->
 
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFavorites"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Favorites"
+            android:layout_margin="0dp"
+            android:textAllCaps="false"
+            android:backgroundTint="@color/gray"
+            android:textColor="#FFFFFF"
+            app:cornerRadius="0dp"/>
 
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnUsefulLinks"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:text="Useful Links"
+            android:layout_margin="0dp"
+            android:textAllCaps="false"
+            android:backgroundTint="@color/red"
+            android:textColor="#FFFFFF"
+            app:cornerRadius="0dp"/>
+
+    </LinearLayout>
+
+<!--   ################# Favorites and Use full Links container ################## -->
+
+    <FrameLayout
+        android:id="@+id/contentContainer"
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:layout_marginTop="12dp"/>
 
 </LinearLayout>

@@ -15,6 +15,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var excluBtn: ImageButton
     private lateinit var cartBtn: ImageButton
 
+    private  lateinit var menuBtn: ImageButton
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.home)
@@ -25,6 +27,7 @@ class MainActivity : AppCompatActivity() {
         magsBtn = findViewById(R.id.mags)
         excluBtn = findViewById(R.id.exclu)
         cartBtn = findViewById(R.id.cart)
+        menuBtn = findViewById(R.id.menu)
 
         // Default fragment
         if (savedInstanceState == null) {
@@ -51,6 +54,11 @@ class MainActivity : AppCompatActivity() {
             loadFragment(cart())
             highlightButton(cartBtn)
         }
+
+        menuBtn.setOnClickListener {
+            val sheet = MenuBottomSheet()
+            sheet.show(supportFragmentManager, "menu")
+        }
     }
 
     private fun loadFragment(fragment: Fragment) {
@@ -65,7 +73,8 @@ class MainActivity : AppCompatActivity() {
             newsBtn,
             magsBtn,
             excluBtn,
-            cartBtn
+            cartBtn,
+            menuBtn
         )
 
         // Reset all buttons to gray
