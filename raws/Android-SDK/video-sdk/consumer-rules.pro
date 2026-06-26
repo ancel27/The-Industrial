@@ -1,0 +1,2 @@
+-keep class com.audivue.sdk.** { *; }
+-dontwarn androidx.media3.**
