@@ -9,9 +9,12 @@ object ThemeManager {
     private val _currentConfig = mutableStateOf<PlatformConfig?>(null)
     val currentConfig: State<PlatformConfig?> = _currentConfig
 
-    // Added Global User ID State
+    // Added Global User ID and Name State
     private val _userId = mutableStateOf<Int?>(null)
     val userId: State<Int?> = _userId
+
+    private val _userName = mutableStateOf<String?>(null)
+    val userName: State<String?> = _userName
 
     fun updateConfig(config: PlatformConfig) {
         _currentConfig.value = config
@@ -19,6 +22,10 @@ object ThemeManager {
 
     fun setUserId(id: Int?) {
         _userId.value = id
+    }
+
+    fun setUserName(name: String?) {
+        _userName.value = name
     }
 
     fun getColor(hex: String?, default: Color): Color {

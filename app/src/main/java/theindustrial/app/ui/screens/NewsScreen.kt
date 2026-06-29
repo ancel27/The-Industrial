@@ -40,8 +40,8 @@ fun NewsScreen(onNewsClick: (Int) -> Unit) {
     val scope = rememberCoroutineScope()
     
     var newsList by remember { mutableStateOf<List<NewsItem>>(emptyList()) }
-    var likedIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
-    var bookmarkedIds by remember { mutableStateOf<Set<Int>>(emptySet()) }
+    var likedHashes by remember { mutableStateOf<Set<String>>(emptySet()) }
+    var bookmarkedHashes by remember { mutableStateOf<Set<String>>(emptySet()) }
     
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
@@ -62,12 +62,12 @@ fun NewsScreen(onNewsClick: (Int) -> Unit) {
                 if (userId != null) {
                     val likesRes = RetrofitInstance.api.viewLikes(cleanKey, userId!!)
                     if (likesRes.isSuccessful) {
-                        likedIds = likesRes.body()?.responseDetails?.mapNotNull { it.id }?.toSet() ?: emptySet()
+                        likedHashes = likesRes.body()?.responseDetails?.mapNotNull { it.hash }?.toSet() ?: emptySet()
                     }
 
                     val bookmarksRes = RetrofitInstance.api.viewBookmarks(cleanKey, userId!!)
                     if (bookmarksRes.isSuccessful) {
-                        bookmarkedIds = bookmarksRes.body()?.responseDetails?.mapNotNull { it.id }?.toSet() ?: emptySet()
+                        bookmarkedHashes = bookmarksRes.body()?.responseDetails?.mapNotNull { it.hash }?.toSet() ?: emptySet()
                     }
                 }
             } catch (e: Exception) {
@@ -90,8 +90,8 @@ fun NewsScreen(onNewsClick: (Int) -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 items(newsList) { newsItem ->
-                    val isLiked = likedIds.contains(newsItem.id)
-                    val isBookmarked = bookmarkedIds.contains(newsItem.id)
+                    val isLiked = likedHashes.contains(newsItem.hash)
+                    val isBookmarked = bookmarkedHashes.contains(newsItem.hash)
 
                     NewsCard(
                         item = newsItem, 
@@ -99,39 +99,39 @@ fun NewsScreen(onNewsClick: (Int) -> Unit) {
                         isBookmarked = isBookmarked,
                         onClick = { newsItem.id?.let { onNewsClick(it) } },
                         onLikeClick = {
-                            if (userId != null && appKey != null && newsItem.id != null) {
+                            if (userId != null && appKey != null && newsItem.hash != null) {
                                 scope.launch {
-                                    val idStr = newsItem.id.toString()
+                                    val hash = newsItem.hash!!
                                     val key = appKey!!.trim()
                                     val uId = userId!!
                                     
                                     val response = if (isLiked) {
-                                        RetrofitInstance.api.unlike(key, uId, "news", idStr, key, uId, "news", idStr)
+                                        RetrofitInstance.api.unlike(key, uId, "content", hash, key, uId, "content", hash)
                                     } else {
-                                        RetrofitInstance.api.like(key, uId, "news", idStr, key, uId, "news", idStr)
+                                        RetrofitInstance.api.like(key, uId, "content", hash, key, uId, "content", hash)
                                     }
                                     
                                     if (response.isSuccessful && response.body()?.responseHeader == 200) {
-                                        likedIds = if (isLiked) likedIds - newsItem.id else likedIds + newsItem.id
+                                        likedHashes = if (isLiked) likedHashes - hash else likedHashes + hash
                                     }
                                 }
                             }
                         },
                         onBookmarkClick = {
-                            if (userId != null && appKey != null && newsItem.id != null) {
+                            if (userId != null && appKey != null && newsItem.hash != null) {
                                 scope.launch {
-                                    val idStr = newsItem.id.toString()
+                                    val hash = newsItem.hash!!
                                     val key = appKey!!.trim()
                                     val uId = userId!!
                                     
                                     val response = if (isBookmarked) {
-                                        RetrofitInstance.api.unbookmark(key, uId, "news", idStr, key, uId, "news", idStr)
+                                        RetrofitInstance.api.unbookmark(key, uId, "content", hash, key, uId, "content", hash)
                                     } else {
-                                        RetrofitInstance.api.bookmark(key, uId, "news", idStr, key, uId, "news", idStr)
+                                        RetrofitInstance.api.bookmark(key, uId, "content", hash, key, uId, "content", hash)
                                     }
                                     
                                     if (response.isSuccessful && response.body()?.responseHeader == 200) {
-                                        bookmarkedIds = if (isBookmarked) bookmarkedIds - newsItem.id else bookmarkedIds + newsItem.id
+                                        bookmarkedHashes = if (isBookmarked) bookmarkedHashes - hash else bookmarkedHashes + hash
                                     }
                                 }
                             }

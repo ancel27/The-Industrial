@@ -45,7 +45,7 @@ data class SignupDetails(
 )
 
 @Composable
-fun AuthContainer(onAuthSuccess: (Int) -> Unit) {
+fun AuthContainer(onAuthSuccess: (Int, String?) -> Unit) {
     var currentState by remember { mutableStateOf<AuthState>(AuthState.PlatformSelection) }
     var selectedAppKey by remember { mutableStateOf("") }
     var signupDetails by remember { mutableStateOf(SignupDetails()) }
@@ -62,7 +62,7 @@ fun AuthContainer(onAuthSuccess: (Int) -> Unit) {
         AuthState.Login -> {
             LoginScreen(
                 appKey = selectedAppKey,
-                onLoginSuccess = { userId -> onAuthSuccess(userId) },
+                onLoginSuccess = { userId, userName -> onAuthSuccess(userId, userName) },
                 onNavigateToSignUp = { currentState = AuthState.Signup },
                 onNavigateToForgotPassword = { currentState = AuthState.ForgotPassword },
                 onBackToPlatform = { currentState = AuthState.PlatformSelection }
@@ -81,7 +81,7 @@ fun AuthContainer(onAuthSuccess: (Int) -> Unit) {
             VerificationScreen(
                 appKey = selectedAppKey,
                 signupDetails = signupDetails,
-                onVerificationSuccess = { userId -> onAuthSuccess(userId) },
+                onVerificationSuccess = { userId, userName -> onAuthSuccess(userId, userName) },
                 onBackToSignup = { currentState = AuthState.Signup }
             )
         }
@@ -183,7 +183,7 @@ fun PlatformSelectionScreen(onPlatformSelected: (String) -> Unit) {
 @Composable
 fun LoginScreen(
     appKey: String,
-    onLoginSuccess: (Int) -> Unit,
+    onLoginSuccess: (Int, String?) -> Unit,
     onNavigateToSignUp: () -> Unit,
     onNavigateToForgotPassword: () -> Unit,
     onBackToPlatform: () -> Unit
@@ -284,7 +284,7 @@ fun LoginScreen(
                             if (body?.userHeader == 200 && (body.total ?: 0) > 0 && !body.userDetails.isNullOrEmpty()) {
                                 val user = body.userDetails.first()
                                 if (user.id != null) {
-                                    onLoginSuccess(user.id)
+                                    onLoginSuccess(user.id, user.name)
                                 } else {
                                     errorMessage = "User ID missing from server response."
                                 }
@@ -444,7 +444,7 @@ fun SignupScreen(
 fun VerificationScreen(
     appKey: String,
     signupDetails: SignupDetails,
-    onVerificationSuccess: (Int) -> Unit,
+    onVerificationSuccess: (Int, String?) -> Unit,
     onBackToSignup: () -> Unit
 ) {
     val context = LocalContext.current
@@ -515,7 +515,7 @@ fun VerificationScreen(
                             if (signupResponse.isSuccessful && signupResponse.body()?.responseHeader == 200) {
                                 val user = signupResponse.body()?.responseDetails?.firstOrNull()
                                 if (user?.id != null) {
-                                    onVerificationSuccess(user.id)
+                                    onVerificationSuccess(user.id, user.name)
                                 } else {
                                     errorMessage = "Account created, but ID missing. Please Login."
                                 }

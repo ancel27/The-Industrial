@@ -57,18 +57,6 @@ interface ApiService {
         @Header("APPKEY") appKey: String
     ): Response<NewsDetailResponse>
 
-    @GET("timobile/likes/view")
-    suspend fun viewLikes(
-        @Header("APPKEY") appKey: String,
-        @Header("USRID") userId: Int
-    ): Response<NewsResponse>
-
-    @GET("timobile/bookmarks/view")
-    suspend fun viewBookmarks(
-        @Header("APPKEY") appKey: String,
-        @Header("USRID") userId: Int
-    ): Response<NewsResponse>
-
     @POST("timobile/comments/add")
     suspend fun addComment(
         @Header("APPKEY") appKey: String,
@@ -132,4 +120,49 @@ interface ApiService {
         @Query("ENTITYTYPE") entityTypeQ: String,
         @Query("ENTITYID") entityIdQ: String
     ): Response<StatusToggleResponse>
+
+    @POST("timobile/history/add")
+    suspend fun addHistory(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int,
+        @Header("ENTITYTYPE") entityType: String,
+        @Header("ENTITYID") entityId: String,
+        @Header("TITLE") title: String? = null,
+        @Header("SLUGURL") slugUrl: String? = null,
+        @Header("TYPES") types: String? = null,
+        @Query("APPKEY") appKeyQ: String,
+        @Query("USRID") userIdQ: Int,
+        @Query("ENTITYTYPE") entityTypeQ: String,
+        @Query("ENTITYID") entityIdQ: String
+    ): Response<CommentResponse>
+
+    @GET("timobile/history/view")
+    suspend fun viewHistory(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int
+    ): Response<HistoryResponse>
+
+    @GET("timobile/likes/view")
+    suspend fun viewLikes(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int
+    ): Response<NewsResponse>
+
+    @GET("timobile/bookmarks/view")
+    suspend fun viewBookmarks(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int
+    ): Response<NewsResponse>
+
+    @GET("timobile/comments/view")
+    suspend fun viewUserComments(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int
+    ): Response<CommentResponse>
+
+    @GET("timobile/user/profile")
+    suspend fun getProfile(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int
+    ): Response<UserResponse>
 }

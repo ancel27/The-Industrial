@@ -21,6 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import coil.compose.AsyncImage
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import theindustrial.app.data.local.PreferenceManager
 import theindustrial.app.data.model.NewsDetailItem
@@ -54,6 +55,31 @@ fun NewsDetailScreen(newsId: Int, onBack: () -> Unit) {
         onBack()
     }
 
+    // Record History after 2 seconds
+    LaunchedEffect(newsId, userId, appKey, detailItem) {
+        if (!appKey.isNullOrBlank() && userId != null && detailItem?.hash != null) {
+            delay(2000) // Wait for 2 seconds
+            try {
+                val cleanKey = appKey!!.trim()
+                val hash = detailItem!!.hash!!
+                
+                RetrofitInstance.api.addHistory(
+                    appKey = cleanKey,
+                    userId = userId,
+                    entityType = "content", // News is 'content' entity type
+                    entityId = hash,
+                    appKeyQ = cleanKey,
+                    userIdQ = userId,
+                    entityTypeQ = "content",
+                    entityIdQ = hash
+                )
+                android.util.Log.d("HISTORY_DEBUG", "Successfully added to history: $hash")
+            } catch (e: Exception) {
+                android.util.Log.e("HISTORY_DEBUG", "Failed to add history: ${e.message}")
+            }
+        }
+    }
+
     LaunchedEffect(appKey, userId) {
         if (!appKey.isNullOrBlank()) {
             try {
@@ -65,16 +91,16 @@ fun NewsDetailScreen(newsId: Int, onBack: () -> Unit) {
                     detailItem = response.body()?.details?.firstOrNull()
                 }
 
-                // 2. Check Like/Bookmark status
+                // 2. Check Like/Bookmark status using hash if available
                 if (userId != null) {
                     val likesRes = RetrofitInstance.api.viewLikes(cleanKey, userId!!)
                     if (likesRes.isSuccessful) {
-                        isLiked = likesRes.body()?.responseDetails?.any { it.id == newsId } ?: false
+                        isLiked = likesRes.body()?.responseDetails?.any { it.id == newsId || it.hash == detailItem?.hash } ?: false
                     }
 
                     val bookmarksRes = RetrofitInstance.api.viewBookmarks(cleanKey, userId!!)
                     if (bookmarksRes.isSuccessful) {
-                        isBookmarked = bookmarksRes.body()?.responseDetails?.any { it.id == newsId } ?: false
+                        isBookmarked = bookmarksRes.body()?.responseDetails?.any { it.id == newsId || it.hash == detailItem?.hash } ?: false
                     }
                 }
             } catch (e: Exception) {
@@ -142,15 +168,15 @@ fun NewsDetailScreen(newsId: Int, onBack: () -> Unit) {
                                     description = "Like",
                                     active = isLiked,
                                     onClick = {
-                                        if (userId != null && appKey != null) {
+                                        if (userId != null && appKey != null && item.hash != null) {
                                             scope.launch {
-                                                val idStr = newsId.toString()
+                                                val hash = item.hash!!
                                                 val key = appKey!!.trim()
                                                 val uId = userId!!
                                                 val res = if (isLiked) {
-                                                    RetrofitInstance.api.unlike(key, uId, "news", idStr, key, uId, "news", idStr)
+                                                    RetrofitInstance.api.unlike(key, uId, "content", hash, key, uId, "content", hash)
                                                 } else {
-                                                    RetrofitInstance.api.like(key, uId, "news", idStr, key, uId, "news", idStr)
+                                                    RetrofitInstance.api.like(key, uId, "content", hash, key, uId, "content", hash)
                                                 }
                                                 if (res.isSuccessful && res.body()?.responseHeader == 200) {
                                                     isLiked = !isLiked
@@ -165,15 +191,15 @@ fun NewsDetailScreen(newsId: Int, onBack: () -> Unit) {
                                     description = "Bookmark",
                                     active = isBookmarked,
                                     onClick = {
-                                        if (userId != null && appKey != null) {
+                                        if (userId != null && appKey != null && item.hash != null) {
                                             scope.launch {
-                                                val idStr = newsId.toString()
+                                                val hash = item.hash!!
                                                 val key = appKey!!.trim()
                                                 val uId = userId!!
                                                 val res = if (isBookmarked) {
-                                                    RetrofitInstance.api.unbookmark(key, uId, "news", idStr, key, uId, "news", idStr)
+                                                    RetrofitInstance.api.unbookmark(key, uId, "content", hash, key, uId, "content", hash)
                                                 } else {
-                                                    RetrofitInstance.api.bookmark(key, uId, "news", idStr, key, uId, "news", idStr)
+                                                    RetrofitInstance.api.bookmark(key, uId, "content", hash, key, uId, "content", hash)
                                                 }
                                                 if (res.isSuccessful && res.body()?.responseHeader == 200) {
                                                     isBookmarked = !isBookmarked
@@ -247,6 +273,8 @@ fun NewsDetailScreen(newsId: Int, onBack: () -> Unit) {
                                     WebView(context).apply {
                                         webViewClient = WebViewClient()
                                         setBackgroundColor(0) // Transparent
+                                        isVerticalScrollBarEnabled = false // Hide vertical scrollbar
+                                        isHorizontalScrollBarEnabled = false // Hide horizontal scrollbar
                                         settings.apply {
                                             javaScriptEnabled = true
                                             loadWithOverviewMode = true
@@ -288,17 +316,17 @@ fun NewsDetailScreen(newsId: Int, onBack: () -> Unit) {
 
                             Button(
                                 onClick = {
-                                    if (commentText.isNotBlank() && userId != null && appKey != null && item.id != null) {
+                                    if (commentText.isNotBlank() && userId != null && appKey != null && item.hash != null) {
                                         scope.launch {
                                             isPostingComment = true
                                             try {
                                                 val cleanAppKey = appKey!!.trim()
                                                 val cleanComment = commentText.trim()
-                                                val entityId = item.id.toString()
+                                                val entityId = item.hash!! // Use Hash for comment ENTITYID too
                                                 val entityType = "news" 
 
                                                 // LOG TO CONSOLE (for direct monitoring)
-                                                println("DEBUG: Button Clicked - User: ${userId}, AppKey: true, ID: ${item.id}")
+                                                println("DEBUG: Button Clicked - User: ${userId}, AppKey: true, ID: ${item.id}, Hash: $entityId")
 
                                                 val response = RetrofitInstance.api.addComment(
                                                     appKey = cleanAppKey,

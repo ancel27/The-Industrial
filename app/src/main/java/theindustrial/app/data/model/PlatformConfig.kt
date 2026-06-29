@@ -42,31 +42,9 @@ data class UserDetail(
     @SerializedName("user_email") val userEmail: String? = null,
     @SerializedName("dateofbirth") val dateOfBirth: String? = null,
     @SerializedName("otp_done") val otpDone: String? = null,
-    @SerializedName("active") val active: Int? = null
-)
-
-// --- Signup & Verification Models ---
-
-data class VerificationResponse(
-    @SerializedName("ResponseHeader") val responseHeader: Int? = null,
-    @SerializedName("ReseponseDetails") val responseDetails: List<VerificationDetail>? = null
-)
-
-data class VerificationDetail(
-    @SerializedName("success") val success: Boolean? = null,
-    @SerializedName("sent") val sent: Boolean? = null,
-    @SerializedName("user_id") val userId: Int? = null,
-    @SerializedName("email") val email: String? = null
-)
-
-data class VerifyEmailResponse(
-    @SerializedName("ResponseHeader") val responseHeader: Int? = null,
-    @SerializedName("ReseponseDetails") val responseDetails: List<VerifyEmailDetail>? = null
-)
-
-data class VerifyEmailDetail(
-    @SerializedName("success") val success: Boolean? = null,
-    @SerializedName("verified") val verified: Boolean? = null
+    @SerializedName("active") val active: Int? = null,
+    @SerializedName("primaryaddress") val primaryAddress: String? = null,
+    @SerializedName("created_at") val createdAt: String? = null
 )
 
 data class SignupResponse(
@@ -114,6 +92,30 @@ data class NewsDetailItem(
     @SerializedName("link") val link: String? = null
 )
 
+// --- Signup & Verification Models ---
+
+data class VerificationResponse(
+    @SerializedName("ResponseHeader") val responseHeader: Int? = null,
+    @SerializedName("ReseponseDetails") val responseDetails: List<VerificationDetail>? = null
+)
+
+data class VerificationDetail(
+    @SerializedName("success") val success: Boolean? = null,
+    @SerializedName("sent") val sent: Boolean? = null,
+    @SerializedName("user_id") val userId: Int? = null,
+    @SerializedName("email") val email: String? = null
+)
+
+data class VerifyEmailResponse(
+    @SerializedName("ResponseHeader") val responseHeader: Int? = null,
+    @SerializedName("ReseponseDetails") val responseDetails: List<VerifyEmailDetail>? = null
+)
+
+data class VerifyEmailDetail(
+    @SerializedName("success") val success: Boolean? = null,
+    @SerializedName("verified") val verified: Boolean? = null
+)
+
 // --- Comment Models ---
 
 data class CommentResponse(
@@ -128,7 +130,9 @@ data class CommentDetail(
     @SerializedName("entity_type") val entityType: String? = null,
     @SerializedName("entity_id") val entityId: String? = null,
     @SerializedName("comment") val comment: String? = null,
-    @SerializedName("status") val status: Int? = null
+    @SerializedName("status") val status: Int? = null,
+    @SerializedName("read_at") val readAt: String? = null,
+    @SerializedName("content") val content: NewsItem? = null
 )
 
 // --- Toggle Status Models ---
@@ -145,4 +149,20 @@ data class ToggleDetail(
     @SerializedName("entity_id") val entityId: String? = null,
     @SerializedName("liked") val liked: Boolean? = null,
     @SerializedName("bookmarked") val bookmarked: Boolean? = null
+)
+
+// --- History Models ---
+
+data class HistoryResponse(
+    @SerializedName("ResponseHeader") val responseHeader: Int? = null,
+    @SerializedName("Total") val total: Int? = null,
+    @SerializedName("ReseponseDetails") val responseDetails: List<HistoryItem>? = null
+)
+
+data class HistoryItem(
+    @SerializedName("entity_type") val entityType: String? = null,
+    @SerializedName("entity_id") val entityId: String? = null,
+    @SerializedName("title") val title: String? = null,
+    @SerializedName("read_at") val readAt: String? = null,
+    @SerializedName("content") val content: NewsItem? = null
 )

@@ -20,6 +20,7 @@ class PreferenceManager(private val context: Context) {
         val APP_KEY = stringPreferencesKey("app_key")
         val CACHED_CONFIG = stringPreferencesKey("cached_config")
         val USER_ID = intPreferencesKey("user_id")
+        val USER_NAME = stringPreferencesKey("user_name")
     }
 
     val isLoggedIn: Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -34,6 +35,10 @@ class PreferenceManager(private val context: Context) {
         preferences[USER_ID]
     }
 
+    val userName: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[USER_NAME]
+    }
+
     val cachedConfig: Flow<PlatformConfig?> = context.dataStore.data.map { preferences ->
         preferences[CACHED_CONFIG]?.let {
             try {
@@ -44,10 +49,16 @@ class PreferenceManager(private val context: Context) {
         }
     }
 
-    suspend fun setLoggedIn(loggedIn: Boolean, id: Int? = null) {
+    suspend fun setLoggedIn(loggedIn: Boolean, id: Int? = null, name: String? = null) {
         context.dataStore.edit { preferences ->
             preferences[IS_LOGGED_IN] = loggedIn
             if (id != null) preferences[USER_ID] = id
+            if (name != null) preferences[USER_NAME] = name
+            
+            if (!loggedIn) {
+                preferences.remove(USER_ID)
+                preferences.remove(USER_NAME)
+            }
         }
     }
 

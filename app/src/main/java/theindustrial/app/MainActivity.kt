@@ -22,12 +22,19 @@ class MainActivity : ComponentActivity() {
             val isLoggedIn by preferenceManager.isLoggedIn.collectAsState(initial = false)
             val savedAppKey by preferenceManager.appKey.collectAsState(initial = null)
             val savedUserId by preferenceManager.userId.collectAsState(initial = null)
+            val savedUserName by preferenceManager.userName.collectAsState(initial = null)
             val cachedConfig by preferenceManager.cachedConfig.collectAsState(initial = null)
             val scope = rememberCoroutineScope()
             
             // Sync saved UserID to Global State immediately
             LaunchedEffect(savedUserId) {
                 ThemeManager.setUserId(savedUserId)
+            }
+
+            // Apply saved user name to ThemeManager (or use local state in Menu)
+            // For consistency, let's add userName to ThemeManager too
+            LaunchedEffect(savedUserName) {
+                ThemeManager.setUserName(savedUserName)
             }
 
             // Immediate apply from cache if available
@@ -59,15 +66,20 @@ class MainActivity : ComponentActivity() {
 
             TheIndustrialTheme {
                 if (!isLoggedIn) {
-                    AuthContainer(onAuthSuccess = { userId ->
-                        // Persist login state with User ID
+                    AuthContainer(onAuthSuccess = { userId, userName ->
+                        // Persist login state with User ID and Name
                         scope.launch {
                             ThemeManager.setUserId(userId)
-                            preferenceManager.setLoggedIn(true, userId)
+                            ThemeManager.setUserName(userName)
+                            preferenceManager.setLoggedIn(true, userId, userName)
                         }
                     })
                 } else {
-                    HomeScreen()
+                    HomeScreen(onLogout = {
+                        scope.launch {
+                            preferenceManager.setLoggedIn(false)
+                        }
+                    })
                 }
             }
         }
