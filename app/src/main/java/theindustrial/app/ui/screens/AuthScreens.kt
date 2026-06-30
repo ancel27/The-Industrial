@@ -105,7 +105,8 @@ fun PlatformSelectionScreen(onPlatformSelected: (String) -> Unit) {
     
     val platforms = mapOf(
         "Factory Future" to BuildConfig.KEY_FACTORY_FUTURE,
-        "Platform B" to BuildConfig.KEY_PLATFORM_B
+        "The Industrial" to BuildConfig.KEY_PLATFORM_B,
+        "Things of Business" to BuildConfig.KEY_THINGS_OF_BUSINESS
     )
 
     Column(

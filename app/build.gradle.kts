@@ -27,6 +27,7 @@ android {
         }
         buildConfigField("String", "KEY_FACTORY_FUTURE", "\"${props.getProperty("KEY_FF", "")}\"")
         buildConfigField("String", "KEY_PLATFORM_B",     "\"${props.getProperty("KEY_PB", "")}\"")
+        buildConfigField("String", "KEY_THINGS_OF_BUSINESS", "\"${props.getProperty("KEY_TOB", "")}\"")
     }
 
     buildTypes {
@@ -92,6 +93,12 @@ dependencies {
 
     // DataStore
     implementation(libs.datastore.preferences)
+
+    // QR Scanner (CameraX + ML Kit)
+    implementation(libs.androidx.camera.camera2)
+    implementation(libs.androidx.camera.lifecycle)
+    implementation(libs.androidx.camera.view)
+    implementation(libs.mlkit.barcode.scanning)
 
     // Testing
     testImplementation(libs.junit)

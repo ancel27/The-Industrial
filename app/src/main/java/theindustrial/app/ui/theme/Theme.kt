@@ -54,16 +54,31 @@ fun TheIndustrialTheme(
 
     val colorScheme = if (config?.theme != null) {
         val theme = config.theme!!
+        val dynamicPrimary = ThemeManager.getColor(theme.primary, Purple40)
+        val dynamicSecondary = ThemeManager.getColor(theme.secondary, PurpleGrey40)
+        val dynamicAccent = ThemeManager.getColor(theme.accent, Pink40)
+        val dynamicBackground = ThemeManager.getColor(theme.background, Color(0xFFFFFBFE))
+        val dynamicText = ThemeManager.getColor(theme.text, Color(0xFF1C1B1F))
+
         lightColorScheme(
-            primary = ThemeManager.getColor(theme.primary, Purple40),
+            primary = dynamicPrimary,
             onPrimary = Color.White,
-            secondary = ThemeManager.getColor(theme.secondary, PurpleGrey40),
+            primaryContainer = dynamicPrimary.copy(alpha = 0.12f),
+            onPrimaryContainer = dynamicPrimary,
+            
+            secondary = dynamicSecondary,
             onSecondary = Color.White,
-            tertiary = ThemeManager.getColor(theme.accent, Pink40),
-            background = ThemeManager.getColor(theme.background, Color(0xFFFFFBFE)),
-            surface = ThemeManager.getColor(theme.background, Color(0xFFFFFBFE)),
-            onBackground = ThemeManager.getColor(theme.text, Color(0xFF1C1B1F)),
-            onSurface = ThemeManager.getColor(theme.text, Color(0xFF1C1B1F))
+            secondaryContainer = dynamicPrimary.copy(alpha = 0.15f), // Pill highlight in Nav Bar
+            onSecondaryContainer = dynamicPrimary,
+            
+            tertiary = dynamicAccent,
+            onTertiary = Color.White,
+            
+            background = dynamicBackground,
+            surface = dynamicBackground,
+            onBackground = dynamicText,
+            onSurface = dynamicText,
+            outlineVariant = dynamicPrimary.copy(alpha = 0.1f)
         )
     } else {
         when {

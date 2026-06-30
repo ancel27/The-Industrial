@@ -160,6 +160,21 @@ interface ApiService {
         @Header("USRID") userId: Int
     ): Response<CommentResponse>
 
+    @GET("timobile/content/search")
+    suspend fun searchContent(
+        @Header("APPKEY") appKey: String,
+        @Header("SRCH") query: String,
+        @Header("STYP") type: String = "all",
+        @Query("APPKEY") appKeyQ: String,
+        @Query("SRCH") queryQ: String,
+        @Query("STYP") typeQ: String = "all"
+    ): Response<NewsResponse>
+
+    @GET("timobile/subscribe/plans")
+    suspend fun getSubscriptionPlans(
+        @Header("APPKEY") appKey: String
+    ): Response<SubscriptionPlanResponse>
+
     @GET("timobile/user/profile")
     suspend fun getProfile(
         @Header("APPKEY") appKey: String,

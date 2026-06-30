@@ -166,3 +166,22 @@ data class HistoryItem(
     @SerializedName("read_at") val readAt: String? = null,
     @SerializedName("content") val content: NewsItem? = null
 )
+
+// --- Subscription Models ---
+
+data class SubscriptionPlanResponse(
+    @SerializedName("ProvHeader") val header: Int? = null,
+    @SerializedName("ProvTotal") val total: Int? = null,
+    @SerializedName("ProvDetails") val plans: List<SubscriptionPlan>? = null
+)
+
+data class SubscriptionPlan(
+    @SerializedName("id") val id: Int? = null,
+    @SerializedName("planname") val name: String? = null,
+    @SerializedName("plandetails") val details: String? = null,
+    @SerializedName("planterm") val term: Int? = null,
+    @SerializedName("planamt") val amount: String? = null,
+    @SerializedName("plangst") val gst: String? = null,
+    @SerializedName("currency") val currency: String? = null,
+    @SerializedName("is_featured") val isFeatured: Int? = null
+)

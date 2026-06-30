@@ -1,5 +1,7 @@
 package theindustrial.app.ui.screens
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,12 +30,15 @@ sealed class Screen(val route: String, val title: String, val icon: Any) {
     object Liked : Screen("liked", "Liked Content", Icons.Default.ThumbUp)
     object History : Screen("history", "Reading History", Icons.Default.History)
     object MyComments : Screen("comments", "My Comments", Icons.Default.ChatBubble)
+    object Subscription : Screen("subscription", "Subscription", R.drawable.cart)
+    object Search : Screen("search", "Search", R.drawable.search)
+    object QrScanner : Screen("qr_scanner", "QR Scanner", R.drawable.qrcode)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(onLogout: () -> Unit) {
-    var currentScreen by remember { mutableStateOf<Screen>(Screen.News) }
+    var currentScreen by remember { mutableStateOf<Screen>(Screen.ForYou) }
     var selectedNewsId by remember { mutableStateOf<Int?>(null) }
     var showMenuSheet by remember { mutableStateOf(false) }
     val sheetState = rememberModalBottomSheetState()
@@ -53,6 +58,7 @@ fun HomeScreen(onLogout: () -> Unit) {
                         "Liked" -> currentScreen = Screen.Liked
                         "History" -> currentScreen = Screen.History
                         "My Comments" -> currentScreen = Screen.MyComments
+                        "Subscription" -> currentScreen = Screen.Subscription
                     }
                 }
             )
@@ -69,17 +75,19 @@ fun HomeScreen(onLogout: () -> Unit) {
             topBar = {
                 TopAppBar(
                     title = {
-                        DynamicLogo(modifier = Modifier.height(80.dp).width(100.dp))
+                        Box(modifier = Modifier.clickable { currentScreen = Screen.ForYou }) {
+                            DynamicLogo(modifier = Modifier.height(80.dp).width(100.dp))
+                        }
                     },
                     actions = {
-                        IconButton(onClick = { /* TODO: Search */ }) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.search),
-                                contentDescription = "Search",
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                        IconButton(onClick = { /* TODO: QR Code */ }) {
+                    IconButton(onClick = { currentScreen = Screen.Search }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.search),
+                            contentDescription = "Search",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+                        IconButton(onClick = { currentScreen = Screen.QrScanner }) {
                             Icon(
                                 painter = painterResource(id = R.drawable.qrcode),
                                 contentDescription = "QR Code",
@@ -142,10 +150,18 @@ fun HomeScreen(onLogout: () -> Unit) {
                     Screen.Video -> VideoScreen()
                     Screen.ForYou -> ForYouScreen()
                     Screen.AccountSettings -> AccountScreen(onLogout = onLogout)
-                    Screen.Bookmarks -> BookmarkScreen(onNewsClick = { selectedNewsId = it }, onBack = { currentScreen = Screen.News })
-                    Screen.Liked -> LikedScreen(onNewsClick = { selectedNewsId = it }, onBack = { currentScreen = Screen.News })
-                    Screen.History -> HistoryScreen(onNewsClick = { selectedNewsId = it }, onBack = { currentScreen = Screen.News })
-                    Screen.MyComments -> UserCommentsScreen(onNewsClick = { selectedNewsId = it }, onBack = { currentScreen = Screen.News })
+                    Screen.Bookmarks -> BookmarkScreen(onNewsClick = { selectedNewsId = it }, onBack = { currentScreen = Screen.ForYou })
+                    Screen.Liked -> LikedScreen(onNewsClick = { selectedNewsId = it }, onBack = { currentScreen = Screen.ForYou })
+                    Screen.History -> HistoryScreen(onNewsClick = { selectedNewsId = it }, onBack = { currentScreen = Screen.ForYou })
+                    Screen.MyComments -> UserCommentsScreen(onNewsClick = { selectedNewsId = it }, onBack = { currentScreen = Screen.ForYou })
+                    Screen.Subscription -> SubscriptionScreen(onBack = { currentScreen = Screen.ForYou })
+                    Screen.Search -> SearchScreen(onNewsClick = { selectedNewsId = it }, onBack = { currentScreen = Screen.ForYou })
+                    Screen.QrScanner -> QrScannerScreen(
+                        onQrScanned = { result ->
+                            currentScreen = Screen.ForYou 
+                        },
+                        onBack = { currentScreen = Screen.ForYou }
+                    )
                     else -> NewsScreen(onNewsClick = { selectedNewsId = it })
                 }
             }
