@@ -3,8 +3,13 @@ package theindustrial.app.ui.screens
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -12,6 +17,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.launch
 import theindustrial.app.data.local.PreferenceManager
 import theindustrial.app.data.model.NewsItem
 import theindustrial.app.data.remote.RetrofitInstance
@@ -24,63 +31,126 @@ fun BookmarkScreen(onNewsClick: (Int) -> Unit, onBack: () -> Unit) {
     val preferenceManager = remember { PreferenceManager(context) }
     val appKey by preferenceManager.appKey.collectAsState(initial = null)
     val userId = ThemeManager.userId.value
+    val scope = rememberCoroutineScope()
 
-    var bookmarkList by remember { mutableStateOf<List<NewsItem>>(emptyList()) }
-    var isLoading by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    var allBookmarks by remember { mutableStateOf<List<NewsItem>>(emptyList()) }
+    var currentPage by remember { mutableIntStateOf(1) }
+    var isEndReached by remember { mutableStateOf(false) }
+    
+    var isLoading by remember { mutableStateOf(false) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    var isFetchingNextPage by remember { mutableStateOf(false) }
 
-    // Intercept system back button
-    BackHandler {
-        onBack()
+    val listState = rememberLazyListState()
+    val ptrState = rememberPullToRefreshState()
+
+    val shouldLoadMore = remember {
+        derivedStateOf {
+            val lastVisibleItemIndex = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            lastVisibleItemIndex >= allBookmarks.size - 5 && !isEndReached && !isFetchingNextPage && !isLoading && !isRefreshing && allBookmarks.isNotEmpty()
+        }
+    }
+
+    BackHandler { onBack() }
+
+    val fetchData = suspend { isNewFetch: Boolean ->
+        if (!appKey.isNullOrBlank() && userId != null) {
+            val pageToFetch = if (isNewFetch) 1 else currentPage + 1
+            try {
+                val response = RetrofitInstance.api.viewBookmarks(appKey!!.trim(), userId, page = pageToFetch, limit = 30)
+                if (response.isSuccessful) {
+                    val freshBookmarks = response.body()?.responseDetails ?: emptyList()
+                    
+                    if (isNewFetch) {
+                        allBookmarks = freshBookmarks
+                        currentPage = 1
+                        isEndReached = freshBookmarks.size < 30
+                    } else {
+                        if (freshBookmarks.isNotEmpty()) {
+                            allBookmarks = allBookmarks + freshBookmarks
+                            currentPage = pageToFetch
+                        }
+                        isEndReached = freshBookmarks.size < 30
+                    }
+                }
+            } catch (e: Exception) { }
+        }
+    }
+
+    LaunchedEffect(shouldLoadMore.value) {
+        if (shouldLoadMore.value) {
+            isFetchingNextPage = true
+            fetchData(false)
+            isFetchingNextPage = false
+        }
     }
 
     LaunchedEffect(appKey, userId) {
-        if (!appKey.isNullOrBlank() && userId != null) {
-            try {
-                val response = RetrofitInstance.api.viewBookmarks(appKey!!.trim(), userId)
-                if (response.isSuccessful) {
-                    bookmarkList = response.body()?.responseDetails ?: emptyList()
-                } else {
-                    errorMessage = "Failed to load bookmarks"
-                }
-            } catch (e: Exception) {
-                errorMessage = "Network error"
-            } finally {
-                isLoading = false
-            }
-        }
+        isLoading = true
+        fetchData(true)
+        isLoading = false
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("Bookmarks", fontWeight = FontWeight.Bold) }
-            )
-        }
-    ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else if (errorMessage != null) {
-                Text(text = errorMessage!!, modifier = Modifier.align(Alignment.Center), color = Color.Red)
-            } else if (bookmarkList.isEmpty()) {
-                Text(text = "No bookmarked articles yet.", modifier = Modifier.align(Alignment.Center))
-            } else {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    items(bookmarkList) { item ->
-                        NewsCard(
-                            item = item,
-                            isLiked = false,
-                            isBookmarked = true,
-                            onClick = { item.id?.let { onNewsClick(it) } },
-                            onLikeClick = {},
-                            onBookmarkClick = {},
-                            onShareClick = {}
-                        )
+    Box(modifier = Modifier.fillMaxSize()) {
+        PullToRefreshBox(
+            state = ptrState,
+            isRefreshing = isRefreshing,
+            onRefresh = {
+                scope.launch {
+                    isRefreshing = true
+                    fetchData(true)
+                    isRefreshing = false
+                }
+            },
+            indicator = {
+                PullToRefreshDefaults.Indicator(
+                    state = ptrState,
+                    isRefreshing = isRefreshing,
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.align(Alignment.TopCenter)
+                )
+            },
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                if (isLoading && !isRefreshing && allBookmarks.isEmpty()) {
+                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+                } else if (allBookmarks.isEmpty() && !isLoading) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("No bookmarks added yet.", color = Color.Gray)
+                    }
+                } else {
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize(),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 0.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        item {
+                            Text(
+                                text = "Bookmarks",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                        }
+
+                        itemsIndexed(allBookmarks) { _, item ->
+                            NewsCard(
+                                item = item,
+                                onClick = { item.id?.let { onNewsClick(it) } }
+                            )
+                        }
+                        
+                        if (isFetchingNextPage) {
+                            item {
+                                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                }
+                            }
+                        }
                     }
                 }
             }

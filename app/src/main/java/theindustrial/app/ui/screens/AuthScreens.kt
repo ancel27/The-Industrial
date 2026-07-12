@@ -1,41 +1,50 @@
 package theindustrial.app.ui.screens
 
+import android.app.DatePickerDialog
+import android.widget.Toast
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.text.SimpleDateFormat
-import java.util.*
 import kotlinx.coroutines.launch
 import theindustrial.app.BuildConfig
+import theindustrial.app.R
 import theindustrial.app.data.local.PreferenceManager
 import theindustrial.app.data.remote.RetrofitInstance
 import theindustrial.app.ui.theme.DynamicLogo
 import theindustrial.app.ui.theme.ThemeManager
+import java.util.*
 
-sealed class AuthState {
-    object PlatformSelection : AuthState()
-    object Login : AuthState()
-    object Signup : AuthState()
-    object Verification : AuthState()
-    object ForgotPassword : AuthState()
+enum class AuthState {
+    PlatformSelection,
+    Login,
+    Signup,
+    Verification,
+    ForgotPassword
 }
 
-// Simple data class to hold signup details between screens
 data class SignupDetails(
     val name: String = "",
     val email: String = "",
@@ -87,100 +96,64 @@ fun AuthContainer(onAuthSuccess: (Int, String?) -> Unit) {
         }
         AuthState.ForgotPassword -> {
             ForgotPasswordScreen(
+                appKey = selectedAppKey,
+                onSuccess = { currentState = AuthState.Login },
                 onBackToLogin = { currentState = AuthState.Login }
             )
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlatformSelectionScreen(onPlatformSelected: (String) -> Unit) {
-    val context = LocalContext.current
-    val preferenceManager = remember { PreferenceManager(context) }
-    var selectedPlatform by remember { mutableStateOf("Select Platform") }
-    var expanded by remember { mutableStateOf(false) }
-    var isFetching by remember { mutableStateOf(false) }
-    val scope = rememberCoroutineScope()
-    
     val platforms = mapOf(
         "Factory Future" to BuildConfig.KEY_FACTORY_FUTURE,
         "The Industrial" to BuildConfig.KEY_PLATFORM_B,
-        "Things of Business" to BuildConfig.KEY_THINGS_OF_BUSINESS
+        "Things of Business" to BuildConfig.KEY_THINGS_OF_BUSINESS,
+        "Mobility Hyperdrive" to BuildConfig.KEY_MOBILITY_HYPERDRIVE,
+        "Banking on Technology" to BuildConfig.KEY_BANKING_ON_TECH,
+        "Technologue" to BuildConfig.KEY_TECHNOLOGUE
     )
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val preferenceManager = remember { PreferenceManager(context) }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Text(
-            text = "Welcome!",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
-        )
-        Text(
-            text = "Please select your industrial platform to continue",
-            style = MaterialTheme.typography.bodyMedium,
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(top = 8.dp, bottom = 32.dp)
-        )
-
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = !expanded }
-        ) {
-            OutlinedTextField(
-                value = selectedPlatform,
-                onValueChange = {},
-                readOnly = true,
-                label = { Text("Industrial Platform") },
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier.fillMaxWidth().menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, true)
-            )
-
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false }
-            ) {
-                platforms.keys.forEach { platform ->
-                    DropdownMenuItem(
-                        text = { Text(platform) },
-                        onClick = {
-                            selectedPlatform = platform
-                            expanded = false
-                            
-                            val appKey = platforms[platform]?.trim()
-                            if (!appKey.isNullOrBlank()) {
-                                scope.launch {
-                                    isFetching = true
-                                    val response = RetrofitInstance.api.getConfig(appKey, appKey)
-                                    if (response.isSuccessful) {
-                                        val config = response.body()?.responseDetails?.firstOrNull()
-                                        if (config != null) {
-                                            ThemeManager.updateConfig(config)
-                                            preferenceManager.setAppKey(appKey)
-                                            preferenceManager.setCachedConfig(config) // Save to cache immediately
-                                            onPlatformSelected(appKey)
-                                        }
-                                    }
-                                    isFetching = false
-                                }
-                            }
-                        }
-                    )
-                }
-            }
-        }
+        Text("Select Platform", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(32.dp))
         
-        if (isFetching) {
-            Spacer(modifier = Modifier.height(24.dp))
-            CircularProgressIndicator()
+        platforms.forEach { (name, key) ->
+            Button(
+                onClick = {
+                    scope.launch {
+                        try {
+                            val response = RetrofitInstance.api.getConfig(key, key)
+                            if (response.isSuccessful && response.body()?.responseDetails?.isNotEmpty() == true) {
+                                val config = response.body()!!.responseDetails!!.first()
+                                ThemeManager.updateConfig(config)
+                                preferenceManager.saveAppKey(key)
+                                preferenceManager.saveConfig(config)
+                                onPlatformSelected(key)
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Network Error", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(56.dp).padding(vertical = 4.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(name, fontWeight = FontWeight.Bold)
+            }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(
     appKey: String,
@@ -190,254 +163,193 @@ fun LoginScreen(
     onBackToPlatform: () -> Unit
 ) {
     val context = LocalContext.current
-    val preferenceManager = remember { PreferenceManager(context) }
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
-    var isLoading by remember { mutableStateOf(false) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
-
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        DynamicLogo(modifier = Modifier.size(120.dp))
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Text(
-            text = "Login to your account",
-            style = MaterialTheme.typography.titleLarge,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.align(Alignment.Start)
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedTextField(
-            value = email,
-            onValueChange = { email = it; errorMessage = null },
-            label = { Text("Email Address") },
-            modifier = Modifier.fillMaxWidth(),
-            singleLine = true,
-            isError = errorMessage != null,
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Email,
-                capitalization = KeyboardCapitalization.None,
-                autoCorrectEnabled = false
-            )
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it; errorMessage = null },
-            label = { Text("Password") },
-            modifier = Modifier.fillMaxWidth(),
-            visualTransformation = PasswordVisualTransformation(),
-            singleLine = true,
-            isError = errorMessage != null,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
-        )
-
-        if (errorMessage != null) {
-            Text(
-                text = errorMessage!!,
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = "Forgot Password?",
-            modifier = Modifier.align(Alignment.End).clickable { onNavigateToForgotPassword() },
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Medium,
-            style = MaterialTheme.typography.bodyMedium
-        )
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        Button(
-            onClick = {
-                scope.launch {
-                    isLoading = true
-                    errorMessage = null
-                    try {
-                        val trimmedEmail = email.trim()
-                        val trimmedPassword = password.trim()
-                        val trimmedAppKey = appKey.trim()
-                        
-                        val response = RetrofitInstance.api.login(
-                            appKey = trimmedAppKey, 
-                            email = trimmedEmail, 
-                            secc = trimmedPassword
-                        )
-                        if (response.isSuccessful) {
-                            val body = response.body()
-                            android.util.Log.d("LOGIN_DEBUG", "Body: $body")
-                            
-                            if (body?.userHeader == 200 && (body.total ?: 0) > 0 && !body.userDetails.isNullOrEmpty()) {
-                                val user = body.userDetails.first()
-                                if (user.id != null) {
-                                    onLoginSuccess(user.id, user.name)
-                                } else {
-                                    errorMessage = "User ID missing from server response."
-                                }
-                            } else {
-                                val total = body?.total ?: 0
-                                val header = body?.userHeader ?: "null"
-                                errorMessage = "Invalid credentials (H:$header, T:$total)."
-                            }
-                        } else {
-                            errorMessage = "Server error (${response.code()})"
-                        }
-                    } catch (e: Exception) {
-                        errorMessage = "Network error: ${e.message}"
-                    } finally {
-                        isLoading = false
-                    }
-                }
-            },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            enabled = !isLoading && email.isNotBlank() && password.isNotBlank(),
-            shape = MaterialTheme.shapes.medium
-        ) {
-            if (isLoading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    strokeWidth = 2.dp
-                )
-            } else {
-                Text("Login", fontSize = 16.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text("Don't have an account? ", color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text(
-                text = "Sign Up",
-                modifier = Modifier.clickable { onNavigateToSignUp() },
-                color = MaterialTheme.colorScheme.primary,
-                fontWeight = FontWeight.Bold,
-                textDecoration = TextDecoration.Underline
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        TextButton(onClick = onBackToPlatform) {
-            Text("Change Platform")
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SignupScreen(
-    onContinue: (SignupDetails) -> Unit,
-    onBackToLogin: () -> Unit
-) {
-    var name by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
-    var mobile by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    var dob by remember { mutableStateOf("") }
-    
-    var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState(
-        selectableDates = object : SelectableDates {
-            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                return utcTimeMillis <= System.currentTimeMillis()
-            }
-            override fun isSelectableYear(year: Int): Boolean {
-                return year <= Calendar.getInstance().get(Calendar.YEAR)
-            }
-        }
-    )
-    val formatter = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()) }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
 
-    if (showDatePicker) {
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    datePickerState.selectedDateMillis?.let {
-                        dob = formatter.format(Date(it))
-                    }
-                    showDatePicker = false
-                }) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel")
-                }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
-    }
+    BackHandler { onBackToPlatform() }
 
     Column(
         modifier = Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        DynamicLogo(modifier = Modifier.size(100.dp))
+        DynamicLogo(modifier = Modifier.size(120.dp))
         Spacer(modifier = Modifier.height(24.dp))
-        Text("Create Account", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(24.dp))
-
-        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Full Name") }, modifier = Modifier.fillMaxWidth())
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(value = email, onValueChange = { email = it }, label = { Text("Email Address") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(value = mobile, onValueChange = { mobile = it }, label = { Text("Mobile Number") }, modifier = Modifier.fillMaxWidth(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
-        Spacer(modifier = Modifier.height(8.dp))
-        OutlinedTextField(value = password, onValueChange = { password = it }, label = { Text("Password") }, modifier = Modifier.fillMaxWidth(), visualTransformation = PasswordVisualTransformation())
-        Spacer(modifier = Modifier.height(8.dp))
+        Text("Welcome Back", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(32.dp))
         
         OutlinedTextField(
-            value = dob,
-            onValueChange = { },
-            label = { Text("Date of Birth") },
-            modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true },
-            readOnly = true,
-            enabled = false,
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            trailingIcon = {
+                val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(imageVector = image, contentDescription = if (passwordVisible) "Hide password" else "Show password")
+                }
+            }
+        )
+        
+        TextButton(onClick = onNavigateToForgotPassword, modifier = Modifier.align(Alignment.End)) {
+            Text("Forgot Password?")
+        }
+        
+        Spacer(modifier = Modifier.height(32.dp))
+        
+        Button(
+            onClick = {
+                scope.launch {
+                    isLoading = true
+                    try {
+                        val cleanKey = appKey.trim()
+                        val cleanEmail = email.trim()
+                        val cleanPass = password.trim()
+                        
+                        val response = RetrofitInstance.api.login(
+                            cleanKey, cleanEmail, cleanPass,
+                            cleanKey, cleanEmail, cleanPass
+                        )
+                        val body = response.body()
+                        if (body?.userHeader == 200 && (body.total ?: 0) > 0 && !body.userDetails.isNullOrEmpty()) {
+                            val user = body.userDetails.first()
+                            if (user.id != null) {
+                                onLoginSuccess(user.id, user.name)
+                            } else {
+                                Toast.makeText(context, "Invalid User Data", Toast.LENGTH_SHORT).show()
+                            }
+                        } else {
+                            Toast.makeText(context, "Login Failed", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Network Error", Toast.LENGTH_SHORT).show()
+                    } finally {
+                        isLoading = false
+                    }
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = RoundedCornerShape(12.dp),
+            enabled = !isLoading
+        ) {
+            if (isLoading) CircularProgressIndicator(color = Color.White) else Text("Login", fontWeight = FontWeight.Bold)
+        }
+        
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Don't have an account?")
+            TextButton(onClick = onNavigateToSignUp) {
+                Text("Sign Up", fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+fun SignupScreen(onContinue: (SignupDetails) -> Unit, onBackToLogin: () -> Unit) {
+    val context = LocalContext.current
+    var name by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var mobile by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    var dob by remember { mutableStateOf("") }
+
+    val calendar = Calendar.getInstance()
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, day ->
+            dob = String.format("%04d-%02d-%02d", year, month + 1, day)
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
+
+    BackHandler { onBackToLogin() }
+
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp).verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Top
+    ) {
+        Spacer(modifier = Modifier.height(48.dp))
+        DynamicLogo(modifier = Modifier.size(100.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+        Text("Create Account", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(32.dp))
+
+        OutlinedTextField(
+            value = name, onValueChange = { name = it },
+            label = { Text("Full Name") }, modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        OutlinedTextField(
+            value = email, onValueChange = { email = it },
+            label = { Text("Email") }, modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        OutlinedTextField(
+            value = mobile, onValueChange = { mobile = it },
+            label = { Text("Mobile Number") }, modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        OutlinedTextField(
+            value = password, onValueChange = { password = it },
+            label = { Text("Password") }, modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp), 
+            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+            trailingIcon = {
+                val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                    Icon(imageVector = image, contentDescription = if (passwordVisible) "Hide password" else "Show password")
+                }
+            }
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        OutlinedTextField(
+            value = dob, onValueChange = { },
+            label = { Text("Date of Birth (YYYY-MM-DD)") },
+            modifier = Modifier.fillMaxWidth().clickable { datePickerDialog.show() },
+            shape = RoundedCornerShape(12.dp), readOnly = true, enabled = false,
             colors = OutlinedTextFieldDefaults.colors(
                 disabledTextColor = MaterialTheme.colorScheme.onSurface,
                 disabledBorderColor = MaterialTheme.colorScheme.outline,
-                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                disabledPlaceholderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
         )
-
+        
         Spacer(modifier = Modifier.height(32.dp))
-
         Button(
-            onClick = { onContinue(SignupDetails(name.trim(), email.trim(), mobile.trim(), password.trim(), dob.trim())) },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            enabled = name.isNotBlank() && email.isNotBlank() && password.isNotBlank() && dob.isNotBlank()
+            onClick = {
+                if (name.isNotBlank() && email.isNotBlank() && mobile.isNotBlank() && password.isNotBlank() && dob.isNotBlank()) {
+                    onContinue(SignupDetails(name, email, mobile, password, dob))
+                } else {
+                    Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = RoundedCornerShape(12.dp)
         ) {
-            Text("Continue")
+            Text("Continue to Verify", fontWeight = FontWeight.Bold)
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-        TextButton(onClick = onBackToLogin) { Text("Already have an account? Login") }
+        TextButton(onClick = onBackToLogin) { Text("Back to Login") }
     }
 }
 
@@ -449,26 +361,27 @@ fun VerificationScreen(
     onBackToSignup: () -> Unit
 ) {
     val context = LocalContext.current
-    val preferenceManager = remember { PreferenceManager(context) }
-    var otp by remember { mutableStateOf("") }
-    var isVerifying by remember { mutableStateOf(false) }
-    var isSendingOtp by remember { mutableStateOf(true) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
+    var otp by remember { mutableStateOf("") }
+    var isSending by remember { mutableStateOf(false) }
+    var isVerifying by remember { mutableStateOf(false) }
+    var otpSent by remember { mutableStateOf(false) }
 
-    // Send OTP on launch
+    BackHandler { onBackToSignup() }
+
     LaunchedEffect(Unit) {
-        try {
-            val response = RetrofitInstance.api.sendVerification(appKey.trim(), signupDetails.email.trim())
-            if (response.isSuccessful && response.body()?.responseDetails?.firstOrNull()?.success == true) {
-                isSendingOtp = false
-            } else {
-                errorMessage = "Failed to send verification code."
-            }
-        } catch (e: Exception) {
-            errorMessage = "Network error."
-        } finally {
-            isSendingOtp = false
+        // Automatically send OTP on enter
+        if (!otpSent) {
+            isSending = true
+            try {
+                val res = RetrofitInstance.api.sendVerification(appKey, signupDetails.email)
+                if (res.isSuccessful && res.body()?.responseDetails?.firstOrNull()?.success == true) {
+                    otpSent = true
+                    Toast.makeText(context, "Verification code sent to email", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(context, "Failed to send code", Toast.LENGTH_SHORT).show()
+            } finally { isSending = false }
         }
     }
 
@@ -477,24 +390,131 @@ fun VerificationScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        DynamicLogo(modifier = Modifier.size(100.dp))
-        Spacer(modifier = Modifier.height(24.dp))
-        Text("Verify Email", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-        Text("Code sent to ${signupDetails.email}", textAlign = TextAlign.Center, modifier = Modifier.padding(top = 8.dp))
-        
+        Text("Verify Email", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text("Sent to ${signupDetails.email}", color = Color.Gray, textAlign = TextAlign.Center)
         Spacer(modifier = Modifier.height(32.dp))
 
         OutlinedTextField(
-            value = otp,
-            onValueChange = { if (it.length <= 6) otp = it },
-            label = { Text("6-Digit Code") },
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-            enabled = !isSendingOtp
+            value = otp, onValueChange = { if (it.length <= 6) otp = it },
+            label = { Text("6-Digit Code") }, modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
+        
+        Spacer(modifier = Modifier.height(32.dp))
 
-        if (errorMessage != null) {
-            Text(text = errorMessage!!, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp))
+        Button(
+            onClick = {
+                scope.launch {
+                    isVerifying = true
+                    try {
+                        val verifyRes = RetrofitInstance.api.verifyEmail(appKey, signupDetails.email, otp)
+                        if (verifyRes.isSuccessful && verifyRes.body()?.responseDetails?.firstOrNull()?.success == true) {
+                            // Proceed to final signup
+                            val signupResponse = RetrofitInstance.api.signup(
+                                appKey, signupDetails.name, signupDetails.email,
+                                signupDetails.mobile, signupDetails.secc, signupDetails.dob
+                            )
+                            if (signupResponse.isSuccessful && signupResponse.body()?.responseHeader == 200) {
+                                val user = signupResponse.body()?.responseDetails?.firstOrNull()
+                                if (user?.id != null) {
+                                    onVerificationSuccess(user.id, user.name)
+                                } else {
+                                    Toast.makeText(context, "Account created, please login", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                        } else {
+                            Toast.makeText(context, "Invalid OTP", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Verification Error", Toast.LENGTH_SHORT).show()
+                    } finally { isVerifying = false }
+                }
+            },
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = RoundedCornerShape(12.dp),
+            enabled = otp.length == 6 && !isVerifying
+        ) {
+            if (isVerifying) CircularProgressIndicator(color = Color.White) else Text("Verify & Sign Up", fontWeight = FontWeight.Bold)
+        }
+        
+        TextButton(onClick = { /* Resend Logic */ }, enabled = !isSending) {
+            Text("Resend Code")
+        }
+        TextButton(onClick = onBackToSignup) { Text("Back") }
+    }
+}
+
+@Composable
+fun ForgotPasswordScreen(
+    appKey: String,
+    onSuccess: () -> Unit,
+    onBackToLogin: () -> Unit
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    
+    var email by remember { mutableStateOf("") }
+    var otp by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
+    var passwordVisible by remember { mutableStateOf(false) }
+    
+    var step by remember { mutableIntStateOf(1) } // 1: Email, 2: OTP & Password
+    var isLoading by remember { mutableStateOf(false) }
+
+    BackHandler { onBackToLogin() }
+
+    Column(
+        modifier = Modifier.fillMaxSize().padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = if (step == 1) "Reset Password" else "Verify & Reset",
+            style = MaterialTheme.typography.headlineMedium,
+            fontWeight = FontWeight.Bold
+        )
+        Text(
+            text = if (step == 1) "Enter your email to receive a reset code" else "Enter the code sent to your email",
+            color = Color.Gray,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+        Spacer(modifier = Modifier.height(32.dp))
+
+        if (step == 1) {
+            OutlinedTextField(
+                value = email,
+                onValueChange = { email = it },
+                label = { Text("Email Address") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+            )
+        } else {
+            OutlinedTextField(
+                value = otp,
+                onValueChange = { if (it.length <= 6) otp = it },
+                label = { Text("6-Digit Code") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            OutlinedTextField(
+                value = newPassword,
+                onValueChange = { newPassword = it },
+                label = { Text("New Password") },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                trailingIcon = {
+                    val image = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, contentDescription = if (passwordVisible) "Hide password" else "Show password")
+                    }
+                }
+            )
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -502,72 +522,45 @@ fun VerificationScreen(
         Button(
             onClick = {
                 scope.launch {
-                    isVerifying = true
-                    errorMessage = null
+                    isLoading = true
                     try {
-                        // 1. Verify Email
-                        val verifyResponse = RetrofitInstance.api.verifyEmail(appKey.trim(), signupDetails.email.trim(), otp.trim())
-                        if (verifyResponse.isSuccessful && verifyResponse.body()?.responseDetails?.firstOrNull()?.verified == true) {
-                            // 2. Final Signup
-                            val signupResponse = RetrofitInstance.api.signup(
-                                appKey.trim(), signupDetails.name.trim(), signupDetails.email.trim(),
-                                signupDetails.mobile.trim(), signupDetails.secc.trim(), signupDetails.dob.trim()
-                            )
-                            if (signupResponse.isSuccessful && signupResponse.body()?.responseHeader == 200) {
-                                val user = signupResponse.body()?.responseDetails?.firstOrNull()
-                                if (user?.id != null) {
-                                    onVerificationSuccess(user.id, user.name)
-                                } else {
-                                    errorMessage = "Account created, but ID missing. Please Login."
-                                }
+                        if (step == 1) {
+                            val res = RetrofitInstance.api.sendVerification(appKey, email.trim())
+                            if (res.isSuccessful && res.body()?.responseDetails?.firstOrNull()?.success == true) {
+                                step = 2
+                                Toast.makeText(context, "Reset code sent", Toast.LENGTH_SHORT).show()
                             } else {
-                                errorMessage = "Signup failed after verification."
+                                Toast.makeText(context, "Email not found", Toast.LENGTH_SHORT).show()
                             }
                         } else {
-                            errorMessage = "Invalid verification code."
+                            val res = RetrofitInstance.api.resetPassword(appKey, email.trim(), otp.trim(), newPassword.trim())
+                            if (res.isSuccessful && res.body()?.responseDetails?.firstOrNull()?.success == true) {
+                                Toast.makeText(context, "Password updated successfully", Toast.LENGTH_SHORT).show()
+                                onSuccess()
+                            } else {
+                                Toast.makeText(context, "Invalid code or failed to reset", Toast.LENGTH_SHORT).show()
+                            }
                         }
                     } catch (e: Exception) {
-                        errorMessage = "Error during verification."
+                        Toast.makeText(context, "Network Error", Toast.LENGTH_SHORT).show()
                     } finally {
-                        isVerifying = false
+                        isLoading = false
                     }
                 }
             },
-            modifier = Modifier.fillMaxWidth().height(50.dp),
-            enabled = otp.length == 6 && !isVerifying && !isSendingOtp
+            modifier = Modifier.fillMaxWidth().height(56.dp),
+            shape = RoundedCornerShape(12.dp),
+            enabled = !isLoading && (if (step == 1) email.isNotBlank() else otp.length == 6 && newPassword.isNotBlank())
         ) {
-            if (isVerifying || isSendingOtp) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+            if (isLoading) {
+                CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
             } else {
-                Text("Verify & Create Account")
+                Text(if (step == 1) "Send Code" else "Reset Password", fontWeight = FontWeight.Bold)
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
-        TextButton(onClick = onBackToSignup) { Text("Back to Edit Details") }
-    }
-}
-
-@Composable
-fun ForgotPasswordScreen(onBackToLogin: () -> Unit) {
-    Column(
-        modifier = Modifier.fillMaxSize().padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text("Reset Password", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(
-            "Please contact your platform administrator or support team to reset your industrial account password.",
-            textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
-        Spacer(modifier = Modifier.height(32.dp))
-        Button(
-            onClick = onBackToLogin,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text("Back to Login")
+        TextButton(onClick = onBackToLogin) {
+            Text("Cancel")
         }
     }
 }

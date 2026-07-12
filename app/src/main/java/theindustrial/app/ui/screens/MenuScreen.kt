@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.outlined.Message
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -25,9 +24,9 @@ data class MenuIconItem(val title: String, val icon: Any)
 fun MenuScreen(onMenuItemClick: (String) -> Unit) {
     val userName = ThemeManager.userName.value ?: "User"
 
-    // Row 1: Primary Platform Items (Using Outlined icons for Lucide look)
+    // Row 1: Primary Platform Items
     val row1 = listOf(
-        MenuIconItem("Ask Kivaa", Icons.AutoMirrored.Outlined.Message),
+        MenuIconItem("Ask Kivaa", Icons.Outlined.ChatBubble),
         MenuIconItem("My Orders", Icons.Outlined.Inventory2),
         MenuIconItem("Subscription", R.drawable.cart),
         MenuIconItem("Exclusive", R.drawable.exclusive)
@@ -55,7 +54,7 @@ fun MenuScreen(onMenuItemClick: (String) -> Unit) {
             .padding(16.dp)
             .verticalScroll(rememberScrollState())
     ) {
-        // --- Namaste & Account Settings Header ---
+        // --- Namaste & My Account Header ---
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -78,24 +77,49 @@ fun MenuScreen(onMenuItemClick: (String) -> Unit) {
                 )
             }
             
-            // "Account Settings" button (Lucide Settings wheel icon equivalent)
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                modifier = Modifier.clickable { onMenuItemClick("Account Settings") }
-            ) {
-                Icon(
-                    imageVector = Icons.Outlined.Settings,
-                    contentDescription = "Account Settings",
-                    modifier = Modifier.size(24.dp),
-                    tint = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = "Account Settings",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
+            // Action Buttons
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                // QR Scanner button
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable { onMenuItemClick("QR Scanner") }
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.qrcode),
+                        contentDescription = "QR Scanner",
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "QR Scanner",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
+
+                Spacer(modifier = Modifier.width(16.dp))
+
+                // "My Account" button
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.clickable { onMenuItemClick("My Account") }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Settings,
+                        contentDescription = "My Account",
+                        modifier = Modifier.size(24.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "My Account",
+                        style = MaterialTheme.typography.labelSmall,
+                        fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                }
             }
         }
 

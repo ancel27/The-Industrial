@@ -4,12 +4,9 @@ import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
-import androidx.compose.material3.lightColorScheme
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -43,6 +40,7 @@ fun DynamicLogo(modifier: Modifier = Modifier) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TheIndustrialTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
@@ -68,14 +66,14 @@ fun TheIndustrialTheme(
             
             secondary = dynamicSecondary,
             onSecondary = Color.White,
-            secondaryContainer = dynamicPrimary.copy(alpha = 0.15f), // Pill highlight in Nav Bar
+            secondaryContainer = Color.Transparent, // Removed pill highlight in Nav Bar
             onSecondaryContainer = dynamicPrimary,
             
             tertiary = dynamicAccent,
             onTertiary = Color.White,
             
-            background = dynamicBackground,
-            surface = dynamicBackground,
+            background = Color.White, // Hardcoded White
+            surface = Color.White,    // Hardcoded White
             onBackground = dynamicText,
             onSurface = dynamicText,
             outlineVariant = dynamicPrimary.copy(alpha = 0.1f)
@@ -91,9 +89,12 @@ fun TheIndustrialTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    // Disable Ripple (glow on press) globally
+    CompositionLocalProvider(LocalRippleConfiguration provides null) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }

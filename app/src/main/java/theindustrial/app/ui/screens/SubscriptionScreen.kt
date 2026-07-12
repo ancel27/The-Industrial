@@ -1,11 +1,8 @@
 package theindustrial.app.ui.screens
 
-import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,8 +34,6 @@ fun SubscriptionScreen(onBack: () -> Unit) {
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    BackHandler { onBack() }
-
     LaunchedEffect(appKey) {
         if (!appKey.isNullOrBlank()) {
             try {
@@ -58,17 +53,93 @@ fun SubscriptionScreen(onBack: () -> Unit) {
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(title = { Text("Subscriptions", fontWeight = FontWeight.Bold) })
-        },
-        bottomBar = {
-            if (selectedPlan != null) {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shadowElevation = 8.dp,
-                    color = MaterialTheme.colorScheme.surface
+    Box(modifier = Modifier.fillMaxSize()) {
+        if (isLoading) {
+            CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+        } else if (errorMessage != null) {
+            Text(text = errorMessage!!, modifier = Modifier.align(Alignment.Center), color = Color.Red)
+        } else {
+            Column(modifier = Modifier.fillMaxSize()) {
+                // Title moved into content
+                Text(
+                    text = "Subscription Plans",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(16.dp)
+                )
+
+                // Top Section: Selected Plan Details
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    colors = CardDefaults.cardColors(containerColor = Color.White),
+                    shape = RoundedCornerShape(16.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                 ) {
+                    Column(modifier = Modifier.padding(20.dp)) {
+                        Text(
+                            text = selectedPlan?.name ?: "Select a plan",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        val details = selectedPlan?.details?.split("\n") ?: emptyList()
+                        details.forEach { detail ->
+                            if (detail.isNotBlank()) {
+                                Row(
+                                    modifier = Modifier.padding(vertical = 6.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.CheckCircle,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                        text = detail, 
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Text(
+                    text = "Choose your plan",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    plans.forEach { plan ->
+                        val isSelected = plan == selectedPlan
+                        PlanCard(
+                            modifier = Modifier.weight(1f),
+                            plan = plan,
+                            isSelected = isSelected,
+                            onClick = { selectedPlan = plan }
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                if (selectedPlan != null) {
                     Button(
                         onClick = { /* TODO: Subscribe */ },
                         modifier = Modifier
@@ -79,85 +150,6 @@ fun SubscriptionScreen(onBack: () -> Unit) {
                         colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
                     ) {
                         Text("Subscribe Now", fontWeight = FontWeight.Bold, fontSize = 16.sp)
-                    }
-                }
-            }
-        }
-    ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize().padding(innerPadding)) {
-            if (isLoading) {
-                CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
-            } else if (errorMessage != null) {
-                Text(text = errorMessage!!, modifier = Modifier.align(Alignment.Center), color = Color.Red)
-            } else {
-                Column(modifier = Modifier.fillMaxSize()) {
-                    // Top Section: Selected Plan Details
-                    Card(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        colors = CardDefaults.cardColors(containerColor = Color.White), // White background for readability
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-                    ) {
-                        Column(modifier = Modifier.padding(20.dp)) {
-                            Text(
-                                text = selectedPlan?.name ?: "Select a plan",
-                                style = MaterialTheme.typography.titleLarge,
-                                fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                            
-                            Spacer(modifier = Modifier.height(12.dp))
-                            
-                            val details = selectedPlan?.details?.split("\n") ?: emptyList()
-                            details.forEach { detail ->
-                                if (detail.isNotBlank()) {
-                                    Row(
-                                        modifier = Modifier.padding(vertical = 6.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.CheckCircle,
-                                            contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(12.dp))
-                                        Text(
-                                            text = detail, 
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    Text(
-                        text = "Choose your plan",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-
-                    // Middle Section: 3 Cards in a Row (No scrolling needed)
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        plans.forEach { plan ->
-                            val isSelected = plan == selectedPlan
-                            PlanCard(
-                                modifier = Modifier.weight(1f),
-                                plan = plan,
-                                isSelected = isSelected,
-                                onClick = { selectedPlan = plan }
-                            )
-                        }
                     }
                 }
             }
@@ -177,7 +169,7 @@ fun PlanCard(modifier: Modifier = Modifier, plan: SubscriptionPlan, isSelected: 
             .clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(
-            containerColor = Color.White // Keep cards white as requested
+            containerColor = Color.White
         ),
         border = BorderStroke(borderWidth, borderColor),
         elevation = CardDefaults.cardElevation(defaultElevation = elevation)

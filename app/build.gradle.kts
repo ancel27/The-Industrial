@@ -28,6 +28,9 @@ android {
         buildConfigField("String", "KEY_FACTORY_FUTURE", "\"${props.getProperty("KEY_FF", "")}\"")
         buildConfigField("String", "KEY_PLATFORM_B",     "\"${props.getProperty("KEY_PB", "")}\"")
         buildConfigField("String", "KEY_THINGS_OF_BUSINESS", "\"${props.getProperty("KEY_TOB", "")}\"")
+        buildConfigField("String", "KEY_MOBILITY_HYPERDRIVE", "\"kivaa_mobility_hyperdrive_mobile_S0yAFbkK2KozdvJzBrbwXeSdU1Nr0OKs\"")
+        buildConfigField("String", "KEY_BANKING_ON_TECH", "\"kivaa_banking_on_technology_mobile_oTZ8lQ3h_tmdaLO93IogxcBypyeylHBH\"")
+        buildConfigField("String", "KEY_TECHNOLOGUE", "\"kivaa_technologue_mobile_BJyOcCk7zUpTbKVVCLvvZRJKL7U9paxv\"")
     }
 
     buildTypes {

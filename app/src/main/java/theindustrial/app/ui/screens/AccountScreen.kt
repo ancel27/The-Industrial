@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -24,6 +25,7 @@ import theindustrial.app.data.local.PreferenceManager
 import theindustrial.app.data.model.UserDetail
 import theindustrial.app.data.remote.RetrofitInstance
 import theindustrial.app.ui.theme.ThemeManager
+import theindustrial.app.utils.ShareUtils
 
 @Composable
 fun AccountScreen(onLogout: () -> Unit) {
@@ -33,6 +35,7 @@ fun AccountScreen(onLogout: () -> Unit) {
     val globalUserId = ThemeManager.userId.value
     val scope = rememberCoroutineScope()
 
+    val currentConfig = ThemeManager.currentConfig.value
     var profile by remember { mutableStateOf<UserDetail?>(null) }
     var isLoading by remember { mutableStateOf(false) }
 
@@ -40,7 +43,6 @@ fun AccountScreen(onLogout: () -> Unit) {
         if (!appKey.isNullOrBlank() && globalUserId != null) {
             isLoading = true
             try {
-                // Ensure correct parameter passing for getProfile
                 val response = RetrofitInstance.api.getProfile(appKey!!.trim(), globalUserId)
                 if (response.isSuccessful) {
                     val user = response.body()?.userDetails?.firstOrNull()
@@ -134,11 +136,41 @@ fun AccountScreen(onLogout: () -> Unit) {
                 .padding(16.dp)
         ) {
             Text(
-                text = "Account Settings",
+                text = "My Account",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(vertical = 16.dp)
             )
+
+            // Invite to App Option
+            AccountMenuItem(
+                label = "Invite to App", 
+                icon = Icons.Outlined.Share,
+                onClick = {
+                    val platformName = currentConfig?.platformName ?: "our app"
+                    val logoUrl = currentConfig?.logoUrl ?: ""
+                    ShareUtils.shareLink(
+                        context = context,
+                        title = "Join $platformName",
+                        url = "Join me on $platformName! Check it out here: $logoUrl"
+                    )
+                }
+            )
+
+            // Clear Cache Option
+            AccountMenuItem(
+                label = "Clear App Cache",
+                icon = Icons.Outlined.DeleteSweep,
+                onClick = {
+                    scope.launch {
+                        preferenceManager.clearAllCache()
+                        // Optional: Show a Toast
+                        android.widget.Toast.makeText(context, "Cache cleared successfully", android.widget.Toast.LENGTH_SHORT).show()
+                    }
+                }
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Logout Item
             Surface(
@@ -185,5 +217,47 @@ fun AccountScreen(onLogout: () -> Unit) {
         }
         
         Spacer(modifier = Modifier.height(40.dp))
+    }
+}
+
+@Composable
+fun AccountMenuItem(
+    label: String, 
+    icon: ImageVector,
+    onClick: () -> Unit = {}
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        shape = RoundedCornerShape(12.dp),
+        color = Color.Transparent,
+        onClick = onClick
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                imageVector = Icons.Outlined.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+                modifier = Modifier.size(20.dp)
+            )
+        }
     }
 }
