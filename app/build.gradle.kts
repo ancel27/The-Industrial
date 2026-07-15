@@ -1,36 +1,68 @@
-import java.util.Properties
-
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
 }
 
 android {
-    namespace = "theindustrial.app"
+    namespace = "kivaa.app"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "theindustrial.app"
+        applicationId = "kivaa.app"
         minSdk = 26
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
 
-        // Pull keys from local.properties
-        val props = Properties().apply {
-            val localPropertiesFile = rootProject.file("local.properties")
-            if (localPropertiesFile.exists()) {
-                load(localPropertiesFile.inputStream())
-            }
+    // --- Product Flavors Configuration ---
+    flavorDimensions += "platform"
+
+    productFlavors {
+        create("factoryFuture") {
+            dimension = "platform"
+            applicationId = "kivaa.factoryfuture"
+            versionName = "1.0-ff"
+            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_factory_future_mobile_Kt9AKaR7Q3pJ_Y9WO1NxOogvE6nTnhbj\"")
+            manifestPlaceholders["appLabel"] = "Factory Future"
         }
-        buildConfigField("String", "KEY_FACTORY_FUTURE", "\"${props.getProperty("KEY_FF", "")}\"")
-        buildConfigField("String", "KEY_PLATFORM_B",     "\"${props.getProperty("KEY_PB", "")}\"")
-        buildConfigField("String", "KEY_THINGS_OF_BUSINESS", "\"${props.getProperty("KEY_TOB", "")}\"")
-        buildConfigField("String", "KEY_MOBILITY_HYPERDRIVE", "\"kivaa_mobility_hyperdrive_mobile_S0yAFbkK2KozdvJzBrbwXeSdU1Nr0OKs\"")
-        buildConfigField("String", "KEY_BANKING_ON_TECH", "\"kivaa_banking_on_technology_mobile_oTZ8lQ3h_tmdaLO93IogxcBypyeylHBH\"")
-        buildConfigField("String", "KEY_TECHNOLOGUE", "\"kivaa_technologue_mobile_BJyOcCk7zUpTbKVVCLvvZRJKL7U9paxv\"")
+        create("theIndustrial") {
+            dimension = "platform"
+            applicationId = "kivaa.theindustrial"
+            versionName = "1.0-ti"
+            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_the_industrial_mobile_QF9PLdi9smCZbrLaDLTX-6t7t-EReE1S\"")
+            manifestPlaceholders["appLabel"] = "The Industrial"
+        }
+        create("thingsOfBusiness") {
+            dimension = "platform"
+            applicationId = "kivaa.thingsofbusiness"
+            versionName = "1.0-tob"
+            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_things_of_business_mobile_-IHdHKSI-2OHY7HdAQC8qJFlY8ryMmDA\"")
+            manifestPlaceholders["appLabel"] = "Things of Business"
+        }
+        create("mobilityHyperdrive") {
+            dimension = "platform"
+            applicationId = "kivaa.mobility"
+            versionName = "1.0-mh"
+            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_mobility_hyperdrive_mobile_S0yAFbkK2KozdvJzBrbwXeSdU1Nr0OKs\"")
+            manifestPlaceholders["appLabel"] = "Mobility Hyperdrive"
+        }
+        create("bankingOnTech") {
+            dimension = "platform"
+            applicationId = "kivaa.banking"
+            versionName = "1.0-bot"
+            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_banking_on_technology_mobile_oTZ8lQ3h_tmdaLO93IogxcBypyeylHBH\"")
+            manifestPlaceholders["appLabel"] = "Banking on Technology"
+        }
+        create("technologue") {
+            dimension = "platform"
+            applicationId = "kivaa.technologue"
+            versionName = "1.0-tech"
+            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_technologue_mobile_BJyOcCk7zUpTbKVVCLvvZRJKL7U9paxv\"")
+            manifestPlaceholders["appLabel"] = "Technologue"
+        }
     }
 
     buildTypes {
@@ -62,7 +94,6 @@ kotlin {
 }
 
 dependencies {
-    // Compose BOM — controls all compose library versions
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.ui.graphics)
@@ -73,7 +104,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
-    // AndroidX core
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -81,29 +111,22 @@ dependencies {
     implementation(libs.androidx.coordinatorlayout)
     implementation(libs.material)
 
-    // Retrofit + Gson (networking)
     implementation(libs.retrofit)
     implementation(libs.retrofit.gson)
     implementation(libs.okhttp.logging)
 
-    // Coil (image loading — logo from URL)
     implementation(libs.coil)
     implementation(libs.coil.compose)
     implementation(libs.coil.svg)
 
-    // Coroutines
     implementation(libs.kotlinx.coroutines.android)
-
-    // DataStore
     implementation(libs.datastore.preferences)
 
-    // QR Scanner (CameraX + ML Kit)
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.mlkit.barcode.scanning)
 
-    // Testing
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

@@ -12,9 +12,9 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/l_logo"
+        android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/l_logo"
+        android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TheIndustrial">
         <activity
@@ -27,6 +27,32 @@
                 <action android:name="android.intent.action.MAIN" />
 
                 <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Deep Link Support for kivaa://platform -->
+            <intent-filter android:label="Kivaa Platform Link">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="kivaa" />
+                <data android:host="*" />
+            </intent-filter>
+
+            <!-- Web Deep Link Support (Supports nested paths like /factoryfuture/watch/123) -->
+            <intent-filter android:autoVerify="true" android:label="Kivaa Web Link">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="kivaa.io.in" />
+                <data android:host="www.theindustrial.in" />
+                <data android:host="theindustrial.in" />
+                <data android:host="www.industrial.in" />
+                <data android:host="industrial.in" />
+                <data android:pathPattern="/.*" />
             </intent-filter>
         </activity>
         <activity
