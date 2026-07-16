@@ -17,53 +17,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // --- Product Flavors Configuration ---
-    flavorDimensions += "platform"
 
-    productFlavors {
-        create("factoryFuture") {
-            dimension = "platform"
-            applicationId = "kivaa.factoryfuture"
-            versionName = "1.0-ff"
-            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_factory_future_mobile_Kt9AKaR7Q3pJ_Y9WO1NxOogvE6nTnhbj\"")
-            manifestPlaceholders["appLabel"] = "Factory Future"
-        }
-        create("theIndustrial") {
-            dimension = "platform"
-            applicationId = "kivaa.theindustrial"
-            versionName = "1.0-ti"
-            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_the_industrial_mobile_QF9PLdi9smCZbrLaDLTX-6t7t-EReE1S\"")
-            manifestPlaceholders["appLabel"] = "The Industrial"
-        }
-        create("thingsOfBusiness") {
-            dimension = "platform"
-            applicationId = "kivaa.thingsofbusiness"
-            versionName = "1.0-tob"
-            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_things_of_business_mobile_-IHdHKSI-2OHY7HdAQC8qJFlY8ryMmDA\"")
-            manifestPlaceholders["appLabel"] = "Things of Business"
-        }
-        create("mobilityHyperdrive") {
-            dimension = "platform"
-            applicationId = "kivaa.mobility"
-            versionName = "1.0-mh"
-            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_mobility_hyperdrive_mobile_S0yAFbkK2KozdvJzBrbwXeSdU1Nr0OKs\"")
-            manifestPlaceholders["appLabel"] = "Mobility Hyperdrive"
-        }
-        create("bankingOnTech") {
-            dimension = "platform"
-            applicationId = "kivaa.banking"
-            versionName = "1.0-bot"
-            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_banking_on_technology_mobile_oTZ8lQ3h_tmdaLO93IogxcBypyeylHBH\"")
-            manifestPlaceholders["appLabel"] = "Banking on Technology"
-        }
-        create("technologue") {
-            dimension = "platform"
-            applicationId = "kivaa.technologue"
-            versionName = "1.0-tech"
-            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_technologue_mobile_BJyOcCk7zUpTbKVVCLvvZRJKL7U9paxv\"")
-            manifestPlaceholders["appLabel"] = "Technologue"
-        }
-    }
 
     buildTypes {
         release {
