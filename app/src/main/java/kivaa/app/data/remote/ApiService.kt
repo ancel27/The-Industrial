@@ -2,6 +2,7 @@ package kivaa.app.data.remote
 
 import kivaa.app.data.model.*
 import retrofit2.Response
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.Header
 import retrofit2.http.POST
@@ -101,9 +102,9 @@ interface ApiService {
         @Query("LIMIT") limit: Int = 30
     ): Response<NewsResponse>
 
-    @GET("timobile/content/{id}")
+    @GET("timobile/content/{iahsh}")
     suspend fun getNewsDetail(
-        @Path("id") id: Int,
+        @Path("iahsh") hash: String,
         @Header("APPKEY") appKey: String
     ): Response<NewsDetailResponse>
 
@@ -280,11 +281,13 @@ interface ApiService {
     suspend fun createTicket(
         @Header("APPKEY") appKey: String,
         @Header("USRID") userId: Int,
+        @Header("TYPE") type: String,
         @Header("DEPT") department: String,
         @Header("SUBJ") subject: String,
         @Header("MESG") message: String,
         @Query("APPKEY") appKeyQ: String,
         @Query("USRID") userIdQ: Int,
+        @Query("TYPE") typeQ: String,
         @Query("DEPT") departmentQ: String,
         @Query("SUBJ") subjectQ: String,
         @Query("MESG") messageQ: String
@@ -376,16 +379,46 @@ interface ApiService {
         @Header("APPKEY") appKey: String
     ): Response<SubscriptionPlanResponse>
 
+    @GET("timobile/subscribe/get-offers")
+    suspend fun getOffers(
+        @Header("APPKEY") appKey: String
+    ): Response<OfferResponse>
+
+    @GET("timobile/subscribe/payment-methods")
+    suspend fun getPaymentMethods(
+        @Header("APPKEY") appKey: String
+    ): Response<PaymentMethodResponse>
+
     @POST("timobile/subscribe/order")
     suspend fun createOrder(
         @Header("APPKEY") appKey: String,
         @Header("USRID") userId: Int,
         @Header("PLAID") planId: Int,
         @Header("ADDID") addressId: Int,
+        @Header("OFFERID") offerId: Int? = null,
+        @Header("PROVIDER_ID") providerId: Int? = null,
+        @Header("PAYMENT_MODE") mode: String? = null,
+        @Header("PAYMENT_STATUS") status: String? = null,
+        @Header("PROVIDER_ORDER_ID") pgOrderId: String? = null,
+        @Header("PROVIDER_PAYMENT_ID") pgPaymentId: String? = null,
+        @Header("PROVIDER_SIGNATURE") pgSignature: String? = null,
+        @Header("REFERENCE_NO") referenceNo: String? = null,
+        @Header("PAID_AT") paidAt: String? = null,
+        @Header("PAYMENT_NOTES") notes: String? = null,
         @Query("APPKEY") appKeyQ: String,
         @Query("USRID") userIdQ: Int,
         @Query("PLAID") planIdQ: Int,
-        @Query("ADDID") addressIdQ: Int
+        @Query("ADDID") addressIdQ: Int,
+        @Query("OFFERID") offerIdQ: Int? = null,
+        @Query("PROVIDER_ID") providerIdQ: Int? = null,
+        @Query("PAYMENT_MODE") modeQ: String? = null,
+        @Query("PAYMENT_STATUS") statusQ: String? = null,
+        @Query("PROVIDER_ORDER_ID") pgOrderIdQ: String? = null,
+        @Query("PROVIDER_PAYMENT_ID") pgPaymentIdQ: String? = null,
+        @Query("PROVIDER_SIGNATURE") pgSignatureQ: String? = null,
+        @Query("REFERENCE_NO") referenceNoQ: String? = null,
+        @Query("PAID_AT") paidAtQ: String? = null,
+        @Query("PAYMENT_NOTES") notesQ: String? = null
     ): Response<OrderResponse>
 
     @GET("timobile/subscribe/orders")
@@ -395,6 +428,22 @@ interface ApiService {
         @Query("APPKEY") appKeyQ: String,
         @Query("USRID") userIdQ: Int
     ): Response<OrderResponse>
+
+    @GET("timobile/subscribe/status")
+    suspend fun getSubscriptionStatus(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int
+    ): Response<SubscriptionStatusResponse>
+
+    @GET("timobile/subscribe/order-status")
+    suspend fun getSpecificOrderStatus(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int,
+        @Header("ORDER_ID") orderId: String,
+        @Query("APPKEY") appKeyQ: String,
+        @Query("USRID") userIdQ: Int,
+        @Query("ORDER_ID") orderIdQ: String
+    ): Response<OrderStatusResponse>
 
     @GET("timobile/ask-kivaa/generate")
     suspend fun askKivaa(
@@ -446,4 +495,11 @@ interface ApiService {
         @Query("APPKEY") appKeyQ: String,
         @Query("USRID") userIdQ: Int
     ): Response<UserResponse>
+
+    @POST("api/mobile/qr-login/approve")
+    suspend fun approveQrLogin(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int,
+        @Body request: QrLoginRequest
+    ): Response<QrLoginResponse>
 }

@@ -97,8 +97,9 @@ fun TheIndustrialTheme(
     if (!view.isInEditMode) {
         SideEffect {
             val window = (view.context as android.app.Activity).window
-            // Since our app background is always white (except Video), we force dark icons
-            WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = true
+            val controller = WindowCompat.getInsetsController(window, view)
+            controller.isAppearanceLightStatusBars = true
+            controller.isAppearanceLightNavigationBars = true
         }
     }
 

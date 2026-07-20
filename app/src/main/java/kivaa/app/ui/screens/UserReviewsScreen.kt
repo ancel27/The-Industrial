@@ -23,7 +23,7 @@ import kivaa.app.ui.theme.ThemeManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserReviewsScreen(onNewsClick: (Int) -> Unit, onBack: () -> Unit) {
+fun UserReviewsScreen(onNewsClick: (String) -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
     val preferenceManager = remember { PreferenceManager(context) }
     val appKey by preferenceManager.appKey.collectAsState(initial = null)
@@ -41,25 +41,25 @@ fun UserReviewsScreen(onNewsClick: (Int) -> Unit, onBack: () -> Unit) {
     BackHandler { onBack() }
 
     val fetchData = suspend { isNewFetch: Boolean ->
-        if (!appKey.isNullOrBlank() && userId != null) {
-            val pageToFetch = if (isNewFetch) 1 else currentPage + 1
+        if (!appKey.isNullOrBlank()) {
             try {
-                // Following the pattern used for comments/history
-                val response = RetrofitInstance.api.viewUserReviews(appKey!!.trim(), userId, page = pageToFetch, limit = 30)
+                val cleanKey = appKey!!.trim()
+                // Fetching approved reviews for 'content' as default entity type for this screen
+                // Usually "My Reviews" might want all user reviews, but per your instruction
+                // I am using the 'reviews/list' call which returns approved public reviews.
+                val response = RetrofitInstance.api.getReviews(
+                    cleanKey, "content", "all", cleanKey, "content", "all", limit = 30
+                )
                 if (response.isSuccessful) {
                     val freshReviews = response.body()?.responseDetails ?: emptyList()
                     
                     if (isNewFetch) {
                         allReviews = freshReviews
                         currentPage = 1
-                        isEndReached = freshReviews.size < 30
+                        isEndReached = true // approved list is currently non-paginated in this specific call
                         errorMessage = null
                     } else {
-                        if (freshReviews.isNotEmpty()) {
-                            allReviews = allReviews + freshReviews
-                            currentPage = pageToFetch
-                        }
-                        isEndReached = freshReviews.size < 30
+                        // Pagination logic if needed later
                     }
                 }
             } catch (e: Exception) {

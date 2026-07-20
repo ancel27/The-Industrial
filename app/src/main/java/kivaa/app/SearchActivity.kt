@@ -2,7 +2,9 @@ package kivaa.app
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -38,6 +40,14 @@ import kivaa.app.ui.theme.ThemeManager
 class SearchActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            )
+        )
+
         setContent {
             TheIndustrialTheme {
                 SearchScreenContent(onBack = { finish() })
@@ -58,7 +68,7 @@ fun SearchScreenContent(onBack: () -> Unit) {
 
     var searchQuery by remember { mutableStateOf("") }
     var searchResults by remember { mutableStateOf<List<NewsItem>>(emptyList()) }
-    var selectedNewsId by remember { mutableStateOf<Int?>(null) }
+    var selectedNewsHash by remember { mutableStateOf<String?>(null) }
     
     var isLoading by remember { mutableStateOf(false) }
     var hasSearched by remember { mutableStateOf(false) }
@@ -85,8 +95,8 @@ fun SearchScreenContent(onBack: () -> Unit) {
         }
     }
 
-    if (selectedNewsId != null) {
-        NewsDetailScreen(newsId = selectedNewsId!!, onBack = { selectedNewsId = null })
+    if (selectedNewsHash != null) {
+        NewsDetailScreen(newsHash = selectedNewsHash!!, onBack = { selectedNewsHash = null })
     } else {
         Scaffold(
             topBar = {
@@ -170,7 +180,7 @@ fun SearchScreenContent(onBack: () -> Unit) {
                         items(searchResults) { item ->
                             NewsCard(
                                 item = item,
-                                onClick = { item.id?.let { selectedNewsId = it } }
+                                onClick = { item.hash?.let { selectedNewsHash = it } }
                             )
                         }
                     }

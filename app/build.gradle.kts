@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -7,6 +9,14 @@ android {
     namespace = "kivaa.app"
     compileSdk = 37
 
+    // Load keys from local.properties
+    val props = Properties().apply {
+        val propertiesFile = rootProject.file("local.properties")
+        if (propertiesFile.exists()) {
+            propertiesFile.inputStream().use { load(it) }
+        }
+    }
+
     defaultConfig {
         applicationId = "kivaa.app"
         minSdk = 26
@@ -15,6 +25,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        buildConfigField("String", "RAZORPAY_KEY", "\"${props.getProperty("RAZORPAY_KEY", "rzp_test_placeholder")}\"")
     }
 
     // --- Product Flavors Configuration ---
@@ -23,45 +34,57 @@ android {
     productFlavors {
         create("factoryFuture") {
             dimension = "platform"
-            applicationId = "kivaa.factoryfuture"
+            applicationId = "kivaa.app.factoryfuture"
             versionName = "1.0-ff"
-            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_factory_future_mobile_Kt9AKaR7Q3pJ_Y9WO1NxOogvE6nTnhbj\"")
+            buildConfigField("String", "PLATFORM_KEY", "\"${props.getProperty("PLATFORM_KEY_FACTORY_FUTURE", "")}\"")
             manifestPlaceholders["appLabel"] = "Factory Future"
+            manifestPlaceholders["appHost"] = "www.factoryfuture.in"
+            manifestPlaceholders["appHostShort"] = "factoryfuture.in"
         }
         create("theIndustrial") {
             dimension = "platform"
-            applicationId = "kivaa.theindustrial"
+            applicationId = "kivaa.app.theindustrial"
             versionName = "1.0-ti"
-            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_the_industrial_mobile_QF9PLdi9smCZbrLaDLTX-6t7t-EReE1S\"")
+            buildConfigField("String", "PLATFORM_KEY", "\"${props.getProperty("PLATFORM_KEY_THE_INDUSTRIAL", "")}\"")
             manifestPlaceholders["appLabel"] = "The Industrial"
+            manifestPlaceholders["appHost"] = "www.theindustrial.in"
+            manifestPlaceholders["appHostShort"] = "theindustrial.in"
         }
         create("thingsOfBusiness") {
             dimension = "platform"
-            applicationId = "kivaa.thingsofbusiness"
+            applicationId = "kivaa.app.thingsofbusiness"
             versionName = "1.0-tob"
-            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_things_of_business_mobile_-IHdHKSI-2OHY7HdAQC8qJFlY8ryMmDA\"")
+            buildConfigField("String", "PLATFORM_KEY", "\"${props.getProperty("PLATFORM_KEY_THINGS_OF_BUSINESS", "")}\"")
             manifestPlaceholders["appLabel"] = "Things of Business"
+            manifestPlaceholders["appHost"] = "www.thingsofbusiness.com"
+            manifestPlaceholders["appHostShort"] = "thingsofbusiness.com"
         }
         create("mobilityHyperdrive") {
             dimension = "platform"
-            applicationId = "kivaa.mobility"
+            applicationId = "kivaa.app.mobility"
             versionName = "1.0-mh"
-            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_mobility_hyperdrive_mobile_S0yAFbkK2KozdvJzBrbwXeSdU1Nr0OKs\"")
+            buildConfigField("String", "PLATFORM_KEY", "\"${props.getProperty("PLATFORM_KEY_MOBILITY_HYPERDRIVE", "")}\"")
             manifestPlaceholders["appLabel"] = "Mobility Hyperdrive"
+            manifestPlaceholders["appHost"] = "www.mobilityhyperdrive.in"
+            manifestPlaceholders["appHostShort"] = "mobilityhyperdrive.in"
         }
         create("bankingOnTech") {
             dimension = "platform"
-            applicationId = "kivaa.banking"
+            applicationId = "kivaa.app.banking"
             versionName = "1.0-bot"
-            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_banking_on_technology_mobile_oTZ8lQ3h_tmdaLO93IogxcBypyeylHBH\"")
+            buildConfigField("String", "PLATFORM_KEY", "\"${props.getProperty("PLATFORM_KEY_BANKING_ON_TECH", "")}\"")
             manifestPlaceholders["appLabel"] = "Banking on Technology"
+            manifestPlaceholders["appHost"] = "www.bankingontechnology.com"
+            manifestPlaceholders["appHostShort"] = "bankingontechnology.com"
         }
         create("technologue") {
             dimension = "platform"
-            applicationId = "kivaa.technologue"
+            applicationId = "kivaa.app.technologue"
             versionName = "1.0-tech"
-            buildConfigField("String", "PLATFORM_KEY", "\"kivaa_technologue_mobile_BJyOcCk7zUpTbKVVCLvvZRJKL7U9paxv\"")
+            buildConfigField("String", "PLATFORM_KEY", "\"${props.getProperty("PLATFORM_KEY_TECHNOLOGUE", "")}\"")
             manifestPlaceholders["appLabel"] = "Technologue"
+            manifestPlaceholders["appHost"] = "www.technologue.in"
+            manifestPlaceholders["appHostShort"] = "technologue.in"
         }
     }
 
@@ -126,6 +149,9 @@ dependencies {
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.mlkit.barcode.scanning)
+    
+    // Razorpay Integration
+    implementation(libs.razorpay.checkout)
 
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))

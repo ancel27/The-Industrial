@@ -23,7 +23,7 @@ import kivaa.app.ui.theme.ThemeManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun UserCommentsScreen(onNewsClick: (Int) -> Unit, onBack: () -> Unit) {
+fun UserCommentsScreen(onNewsClick: (String) -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
     val preferenceManager = remember { PreferenceManager(context) }
     val appKey by preferenceManager.appKey.collectAsState(initial = null)
@@ -123,7 +123,7 @@ fun UserCommentsScreen(onNewsClick: (Int) -> Unit, onBack: () -> Unit) {
 }
 
 @Composable
-fun UserCommentCard(item: CommentDetail, onNewsClick: (Int) -> Unit) {
+fun UserCommentCard(item: CommentDetail, onNewsClick: (String) -> Unit) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(8.dp),
@@ -136,7 +136,7 @@ fun UserCommentCard(item: CommentDetail, onNewsClick: (Int) -> Unit) {
                     text = item.content?.title ?: "Original Article",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.clickable { item.content?.id?.let { onNewsClick(it) } }
+                    modifier = Modifier.clickable { item.content?.hash?.let { onNewsClick(it) } }
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(

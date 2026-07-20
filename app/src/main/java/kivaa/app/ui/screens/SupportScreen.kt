@@ -118,8 +118,8 @@ fun SupportScreen(onBack: () -> Unit) {
                     val cleanKey = appKey!!.trim()
                     val safeMsg = msg.replace("\n", " ") // Header safety
                     val response = RetrofitInstance.api.createTicket(
-                        cleanKey, userId!!, dept, subj, safeMsg,
-                        cleanKey, userId!!, dept, subj, safeMsg
+                        cleanKey, userId!!, "support", dept, subj, safeMsg,
+                        cleanKey, userId!!, "support", dept, subj, safeMsg
                     )
                     if (response.isSuccessful) {
                         showCreateDialog = false

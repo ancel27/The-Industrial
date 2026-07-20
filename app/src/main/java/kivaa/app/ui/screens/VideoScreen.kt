@@ -196,8 +196,7 @@ fun VideoListView(videos: List<VideoItem>, onVideoClick: (VideoItem) -> Unit) {
 fun VideoCard(video: VideoItem, onClick: () -> Unit) {
     val config = ThemeManager.currentConfig.value
     val placeholderUrl = remember(config) {
-        val cdn = config?.cdnUrl ?: ""
-        if (cdn.endsWith("/")) "${cdn}content/placeholder.jpg" else "${cdn}/content/placeholder.jpg"
+        config?.imageUrl1 ?: config?.imageUrl2 ?: ""
     }
 
     Column(
@@ -269,8 +268,7 @@ fun VideoCard(video: VideoItem, onClick: () -> Unit) {
 fun VideoDetailView(video: VideoItem, relatedVideos: List<VideoItem>, onBack: () -> Unit) {
     val config = ThemeManager.currentConfig.value
     val placeholderUrl = remember(config) {
-        val cdn = config?.cdnUrl ?: ""
-        if (cdn.endsWith("/")) "${cdn}content/placeholder.jpg" else "${cdn}/content/placeholder.jpg"
+        config?.imageUrl1 ?: config?.imageUrl2 ?: ""
     }
 
     BackHandler { onBack() }
@@ -361,8 +359,7 @@ fun VideoActionChip(icon: androidx.compose.ui.graphics.vector.ImageVector, label
 fun RelatedVideoItem(video: VideoItem) {
     val config = ThemeManager.currentConfig.value
     val placeholderUrl = remember(config) {
-        val cdn = config?.cdnUrl ?: ""
-        if (cdn.endsWith("/")) "${cdn}content/placeholder.jpg" else "${cdn}/content/placeholder.jpg"
+        config?.imageUrl1 ?: config?.imageUrl2 ?: ""
     }
 
     Row(modifier = Modifier.fillMaxWidth()) {

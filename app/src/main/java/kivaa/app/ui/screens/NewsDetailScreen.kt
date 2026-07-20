@@ -40,7 +40,7 @@ import kivaa.app.utils.ShareUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewsDetailScreen(newsId: Int, onBack: () -> Unit) {
+fun NewsDetailScreen(newsHash: String, onBack: () -> Unit) {
     val context = LocalContext.current
     val preferenceManager = remember { PreferenceManager(context) }
     val appKey by preferenceManager.appKey.collectAsState(initial = null)
@@ -83,7 +83,7 @@ fun NewsDetailScreen(newsId: Int, onBack: () -> Unit) {
     BackHandler { onBack() }
 
     // Record History after 2 seconds
-    LaunchedEffect(newsId, userId, appKey, detailItem) {
+    LaunchedEffect(newsHash, userId, appKey, detailItem) {
         if (!appKey.isNullOrBlank() && userId != null && detailItem?.hash != null) {
             delay(2000)
             try {
@@ -101,7 +101,7 @@ fun NewsDetailScreen(newsId: Int, onBack: () -> Unit) {
         if (!appKey.isNullOrBlank()) {
             try {
                 val cleanKey = appKey!!.trim()
-                val response = RetrofitInstance.api.getNewsDetail(newsId, cleanKey)
+                val response = RetrofitInstance.api.getNewsDetail(newsHash, cleanKey)
                 if (response.isSuccessful) {
                     detailItem = response.body()?.details?.firstOrNull()
                     
@@ -119,11 +119,11 @@ fun NewsDetailScreen(newsId: Int, onBack: () -> Unit) {
                 if (userId != null) {
                     val likesRes = RetrofitInstance.api.viewLikes(cleanKey, userId!!)
                     if (likesRes.isSuccessful) {
-                        isLiked = likesRes.body()?.responseDetails?.any { it.id == newsId || it.hash == detailItem?.hash } ?: false
+                        isLiked = likesRes.body()?.responseDetails?.any { it.hash == newsHash } ?: false
                     }
                     val bookmarksRes = RetrofitInstance.api.viewBookmarks(cleanKey, userId!!)
                     if (bookmarksRes.isSuccessful) {
-                        isBookmarked = bookmarksRes.body()?.responseDetails?.any { it.id == newsId || it.hash == detailItem?.hash } ?: false
+                        isBookmarked = bookmarksRes.body()?.responseDetails?.any { it.hash == newsHash } ?: false
                     }
                 }
             } catch (e: Exception) {
@@ -151,9 +151,9 @@ fun NewsDetailScreen(newsId: Int, onBack: () -> Unit) {
                                     .replace("\n", " ")
                                 
                                 val response = RetrofitInstance.api.createTicket(
-                                    cleanKey, userId, "content", "Reported Content",
+                                    cleanKey, userId, "report", "content", "Reported Content",
                                     safeMessage,
-                                    cleanKey, userId, "content", "Reported Content",
+                                    cleanKey, userId, "report", "content", "Reported Content",
                                     safeMessage
                                 )
                                 if (response.isSuccessful) {
@@ -203,8 +203,7 @@ fun NewsDetailScreen(newsId: Int, onBack: () -> Unit) {
                 detailItem?.let { item ->
                     val config = ThemeManager.currentConfig.value
                     val placeholderUrl = remember(config) {
-                        val cdn = config?.cdnUrl ?: ""
-                        if (cdn.endsWith("/")) "${cdn}content/placeholder.jpg" else "${cdn}/content/placeholder.jpg"
+                        config?.imageUrl1 ?: config?.imageUrl2 ?: ""
                     }
 
                     Column(

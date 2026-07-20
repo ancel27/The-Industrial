@@ -38,7 +38,7 @@ enum class ContentCategory(val title: String) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ForYouScreen(onNewsClick: (Int) -> Unit) {
+fun ForYouScreen(onNewsClick: (String) -> Unit) {
     val context = LocalContext.current
     val preferenceManager = remember { PreferenceManager(context) }
     val appKey by preferenceManager.appKey.collectAsState(initial = null)
@@ -207,7 +207,7 @@ fun ForYouScreen(onNewsClick: (Int) -> Unit) {
                         items(contentList) { item ->
                             NewsCard(
                                 item = item,
-                                onClick = { item.id?.let { onNewsClick(it) } }
+                                onClick = { item.hash?.let { onNewsClick(it) } }
                             )
                         }
 

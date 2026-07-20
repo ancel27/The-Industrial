@@ -6,7 +6,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.PullToRefreshDefaults
@@ -52,10 +55,6 @@ fun OrderScreen(onBack: () -> Unit) {
                 if (response.isSuccessful) {
                     orders = response.body()?.responseDetails ?: emptyList()
                     errorMessage = null
-                    // Scroll to latest order (bottom)
-                    if (orders.isNotEmpty()) {
-                        listState.animateScrollToItem(orders.size - 1)
-                    }
                 }
             } catch (e: Exception) {
                 if (orders.isEmpty()) errorMessage = "Network error"
@@ -89,7 +88,7 @@ fun OrderScreen(onBack: () -> Unit) {
                     modifier = Modifier.align(Alignment.TopCenter)
                 )
             },
-            modifier = Modifier.fillMaxSize().background(Color(0xFFF8FAFC))
+            modifier = Modifier.fillMaxSize().padding(top = 0.dp).background(Color.White) 
         ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 if (isLoading && orders.isEmpty()) {
@@ -102,8 +101,7 @@ fun OrderScreen(onBack: () -> Unit) {
                     LazyColumn(
                         state = listState,
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 16.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                        contentPadding = PaddingValues(top = 8.dp, bottom = 16.dp)
                     ) {
                         item {
                             Text(
@@ -111,11 +109,15 @@ fun OrderScreen(onBack: () -> Unit) {
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.padding(bottom = 0.dp)
+                                modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
                             )
                         }
                         items(orders) { order ->
-                            OrderBubble(order)
+                            OrderItem(order)
+                            HorizontalDivider(
+                                modifier = Modifier.padding(horizontal = 16.dp),
+                                color = Color.LightGray.copy(alpha = 0.3f)
+                            )
                         }
                     }
                 }
@@ -125,65 +127,62 @@ fun OrderScreen(onBack: () -> Unit) {
 }
 
 @Composable
-fun OrderBubble(order: OrderDetail) {
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.End // Orders look like user-sent messages
+fun OrderItem(order: OrderDetail) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Card(
-            modifier = Modifier.widthIn(max = 300.dp),
-            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 2.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary)
+        // Ticket/Receipt Icon in Circle
+        Surface(
+            modifier = Modifier.size(48.dp),
+            shape = CircleShape,
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
         ) {
-            Column(modifier = Modifier.padding(12.dp)) {
-                Text(
-                    text = order.planName ?: "Subscription Plan",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 15.sp
+            Box(contentAlignment = Alignment.Center) {
+                Icon(
+                    imageVector = Icons.Default.Receipt,
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.primary
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "Amount: ${order.currency ?: "₹"}${order.amount ?: "0"}",
-                        color = Color.White.copy(alpha = 0.9f),
-                        fontSize = 13.sp
-                    )
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                HorizontalDivider(color = Color.White.copy(alpha = 0.2f))
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "ID: ${order.orderNo ?: "N/A"}",
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Surface(
-                        shape = RoundedCornerShape(4.dp),
-                        color = Color.White.copy(alpha = 0.2f)
-                    ) {
-                        Text(
-                            text = (order.status ?: "Pending").uppercase(),
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                            color = Color.White,
-                            fontSize = 9.sp,
-                            fontWeight = FontWeight.ExtraBold
-                        )
-                    }
-                }
             }
         }
-        Text(
-            text = order.createdAt?.take(10) ?: "",
-            modifier = Modifier.padding(top = 4.dp, end = 4.dp),
-            color = Color.Gray,
-            fontSize = 10.sp
-        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = order.planName ?: "Subscription Plan",
+                fontWeight = FontWeight.Bold,
+                fontSize = 15.sp,
+                color = Color.Black
+            )
+            Text(
+                text = "ID: ${order.orderNo ?: "N/A"}",
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
+            Text(
+                text = "Amount: ${order.currency ?: "₹"}${order.amount ?: "0"}",
+                fontSize = 12.sp,
+                color = Color.Gray
+            )
+        }
+
+        // Status Badge
+        Surface(
+            shape = RoundedCornerShape(12.dp),
+            color = Color(0xFFF2F2F2)
+        ) {
+            Text(
+                text = (order.status ?: "Pending").uppercase(),
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
+                color = Color.DarkGray,
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
     }
 }

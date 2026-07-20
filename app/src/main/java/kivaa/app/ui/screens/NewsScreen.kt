@@ -37,7 +37,7 @@ import kivaa.app.utils.DateUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun NewsScreen(onNewsClick: (Int) -> Unit) {
+fun NewsScreen(onNewsClick: (String) -> Unit) {
     val context = LocalContext.current
     val preferenceManager = remember { PreferenceManager(context) }
     val appKey by preferenceManager.appKey.collectAsState(initial = null)
@@ -153,7 +153,7 @@ fun NewsScreen(onNewsClick: (Int) -> Unit) {
                     itemsIndexed(newsList) { _, newsItem ->
                         NewsCard(
                             item = newsItem, 
-                            onClick = { newsItem.id?.let { onNewsClick(it) } }
+                            onClick = { newsItem.hash?.let { onNewsClick(it) } }
                         )
                     }
 
@@ -209,8 +209,7 @@ fun NewsCard(
     val context = LocalContext.current
     val config = ThemeManager.currentConfig.value
     val placeholderUrl = remember(config) {
-        val cdn = config?.cdnUrl ?: ""
-        if (cdn.endsWith("/")) "${cdn}content/placeholder.jpg" else "${cdn}/content/placeholder.jpg"
+        config?.imageUrl1 ?: config?.imageUrl2 ?: ""
     }
 
     Card(

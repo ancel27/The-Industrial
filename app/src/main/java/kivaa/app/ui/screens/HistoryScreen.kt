@@ -26,7 +26,7 @@ import kivaa.app.ui.theme.ThemeManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun HistoryScreen(onNewsClick: (Int) -> Unit, onBack: () -> Unit) {
+fun HistoryScreen(onNewsClick: (String) -> Unit, onBack: () -> Unit) {
     val context = LocalContext.current
     val preferenceManager = remember { PreferenceManager(context) }
     val appKey by preferenceManager.appKey.collectAsState(initial = null)
@@ -146,7 +146,7 @@ fun HistoryScreen(onNewsClick: (Int) -> Unit, onBack: () -> Unit) {
                             historyItem.content?.let { newsItem ->
                                 NewsCard(
                                     item = newsItem,
-                                    onClick = { newsItem.id?.let { onNewsClick(it) } }
+                                    onClick = { newsItem.hash?.let { onNewsClick(it) } }
                                 )
                             }
                         }

@@ -8,7 +8,7 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
-        android:name=".TheIndustrialApp"
+        android:name="kivaa.app.TheIndustrialApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -16,9 +16,10 @@
         android:label="@string/app_name"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
-        android:theme="@style/Theme.TheIndustrial">
+        android:theme="@style/Theme.TheIndustrial"
+        android:usesCleartextTraffic="true">
         <activity
-            android:name=".MainActivity"
+            android:name="kivaa.app.MainActivity"
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.TheIndustrial"
@@ -29,38 +30,58 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
 
-            <!-- Deep Link Support for kivaa://platform -->
-            <intent-filter android:label="Kivaa Platform Link">
+            <!-- Branded App Links (Split for reliability) -->
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-
-                <data android:scheme="kivaa" />
-                <data android:host="*" />
+                <data android:scheme="http" />
+                <data android:scheme="https" />
+                <data android:host="${appHost}" />
+                <data android:host="${appHostShort}" />
+                <data android:pathPrefix="/" />
+                <data android:pathPrefix="/news/" />
+                <data android:pathPrefix="/watch/" />
+                <data android:pathPrefix="/magazine/" />
             </intent-filter>
 
-            <!-- Web Deep Link Support (Supports nested paths like /factoryfuture/watch/123) -->
-            <intent-filter android:autoVerify="true" android:label="Kivaa Web Link">
+            <!-- Universal Kivaa Redirect -->
+            <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-
                 <data android:scheme="http" />
                 <data android:scheme="https" />
                 <data android:host="kivaa.io.in" />
-                <data android:host="www.theindustrial.in" />
-                <data android:host="theindustrial.in" />
-                <data android:host="www.industrial.in" />
-                <data android:host="industrial.in" />
-                <data android:pathPattern="/.*" />
+                <data android:pathPrefix="/" />
+                <data android:pathPrefix="/app/" />
+                <data android:pathPrefix="/news/" />
+            </intent-filter>
+
+            <!-- Custom Scheme -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="kivaa" />
+                <data android:host="*" />
             </intent-filter>
         </activity>
         <activity
-            android:name=".SearchActivity"
+            android:name="kivaa.app.SearchActivity"
             android:exported="false"
             android:theme="@style/Theme.TheIndustrial" />
         <activity
-            android:name=".SupportChatActivity"
+            android:name="kivaa.app.SupportChatActivity"
+            android:exported="false"
+            android:theme="@style/Theme.TheIndustrial" />
+        <activity
+            android:name="kivaa.app.MagazineReaderActivity"
+            android:exported="false"
+            android:configChanges="orientation|screenSize"
+            android:theme="@style/Theme.TheIndustrial" />
+        <activity
+            android:name="kivaa.app.PaymentActivity"
             android:exported="false"
             android:theme="@style/Theme.TheIndustrial" />
     </application>

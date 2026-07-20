@@ -23,7 +23,7 @@ import kivaa.app.ui.theme.ThemeManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExclusiveScreen(onNewsClick: (Int) -> Unit) {
+fun ExclusiveScreen(onNewsClick: (String) -> Unit) {
     val context = LocalContext.current
     val preferenceManager = remember { PreferenceManager(context) }
     val appKey by preferenceManager.appKey.collectAsState(initial = null)
@@ -141,7 +141,7 @@ fun ExclusiveScreen(onNewsClick: (Int) -> Unit) {
                     itemsIndexed(exclusiveList) { _, item ->
                         NewsCard(
                             item = item,
-                            onClick = { item.id?.let { onNewsClick(it) } }
+                            onClick = { item.hash?.let { onNewsClick(it) } }
                         )
                     }
 

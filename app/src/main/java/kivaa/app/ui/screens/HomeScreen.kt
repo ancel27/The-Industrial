@@ -97,7 +97,7 @@ fun HomeScreen(onLogout: () -> Unit) {
     }
     
     var currentScreen by remember { mutableStateOf<Screen>(Screen.ForYou) }
-    var selectedNewsId by remember { mutableStateOf<Int?>(null) }
+    var selectedNewsHash by remember { mutableStateOf<String?>(null) }
     
     // Handle Deep Link Navigation Actions
     LaunchedEffect(NavigationManager.pendingAction.value) {
@@ -105,7 +105,7 @@ fun HomeScreen(onLogout: () -> Unit) {
             when (action.targetScreen?.lowercase()) {
                 "watch" -> currentScreen = Screen.Video
                 "news" -> {
-                    action.itemId?.toIntOrNull()?.let { selectedNewsId = it }
+                    selectedNewsHash = action.itemId
                 }
                 "magazine" -> currentScreen = Screen.Magazine
             }
@@ -148,22 +148,24 @@ fun HomeScreen(onLogout: () -> Unit) {
     }
 
     // Navigation Logic: Back from anything to For You. Back from For You exits.
-    BackHandler(enabled = currentScreen != Screen.ForYou || selectedNewsId != null) {
-        if (selectedNewsId != null) {
-            selectedNewsId = null
+    BackHandler(enabled = currentScreen != Screen.ForYou || selectedNewsHash != null) {
+        if (selectedNewsHash != null) {
+            selectedNewsHash = null
         } else {
             currentScreen = Screen.ForYou
             searchQuery = ""
         }
     }
 
-    if (selectedNewsId != null) {
+    if (selectedNewsHash != null) {
         NewsDetailScreen(
-            newsId = selectedNewsId!!,
-            onBack = { selectedNewsId = null }
+            newsHash = selectedNewsHash!!,
+            onBack = { selectedNewsHash = null }
         )
     } else if (currentScreen == Screen.AskKivaa) {
         KivaaChatScreen(onBack = { currentScreen = Screen.ForYou })
+    } else if (currentScreen == Screen.Subscription) {
+        SubscriptionScreen(onBack = { currentScreen = Screen.ForYou })
     } else {
         Scaffold(
             topBar = {
@@ -274,7 +276,7 @@ fun HomeScreen(onLogout: () -> Unit) {
                             selected = currentScreen == screen,
                             onClick = {
                                 if (screen == Screen.Menu) showMenuSheet = true
-                                else { currentScreen = screen; selectedNewsId = null }
+                                else { currentScreen = screen; selectedNewsHash = null }
                             }
                         )
                     }
@@ -285,25 +287,31 @@ fun HomeScreen(onLogout: () -> Unit) {
             // We use the top padding to ensure content starts AFTER the appbar
             Box(modifier = Modifier.fillMaxSize().padding(top = innerPadding.calculateTopPadding(), bottom = innerPadding.calculateBottomPadding())) {
                 when (currentScreen) {
-                    Screen.News -> NewsScreen(onNewsClick = { selectedNewsId = it })
+                    Screen.News -> NewsScreen(onNewsClick = { selectedNewsHash = it })
                     Screen.Magazine -> MagazineScreen()
                     Screen.Video -> VideoScreen()
-                    Screen.ForYou -> ForYouScreen(onNewsClick = { selectedNewsId = it })
+                    Screen.ForYou -> ForYouScreen(onNewsClick = { selectedNewsHash = it })
                     Screen.AccountSettings -> AccountScreen(onLogout = onLogout)
                     Screen.Addresses -> AddressScreen(onBack = { currentScreen = Screen.ForYou })
-                    Screen.Bookmarks -> BookmarkScreen(onNewsClick = { selectedNewsId = it }, onBack = { currentScreen = Screen.ForYou })
-                    Screen.Liked -> LikedScreen(onNewsClick = { selectedNewsId = it }, onBack = { currentScreen = Screen.ForYou })
-                    Screen.History -> HistoryScreen(onNewsClick = { selectedNewsId = it }, onBack = { currentScreen = Screen.ForYou })
-                    Screen.MyComments -> UserCommentsScreen(onNewsClick = { selectedNewsId = it }, onBack = { currentScreen = Screen.ForYou })
-                    Screen.MyReviews -> UserReviewsScreen(onNewsClick = { selectedNewsId = it }, onBack = { currentScreen = Screen.ForYou })
+                    Screen.Bookmarks -> BookmarkScreen(onNewsClick = { selectedNewsHash = it }, onBack = { currentScreen = Screen.ForYou })
+                    Screen.Liked -> LikedScreen(onNewsClick = { selectedNewsHash = it }, onBack = { currentScreen = Screen.ForYou })
+                    Screen.History -> HistoryScreen(onNewsClick = { selectedNewsHash = it }, onBack = { currentScreen = Screen.ForYou })
+                    Screen.MyComments -> UserCommentsScreen(onNewsClick = { selectedNewsHash = it }, onBack = { currentScreen = Screen.ForYou })
+                    Screen.MyReviews -> UserReviewsScreen(onNewsClick = { selectedNewsHash = it }, onBack = { currentScreen = Screen.ForYou })
                     Screen.Orders -> OrderScreen(onBack = { currentScreen = Screen.ForYou })
                     Screen.Subscription -> SubscriptionScreen(onBack = { currentScreen = Screen.ForYou })
                     Screen.Preferences -> PreferencesScreen(onBack = { currentScreen = Screen.ForYou })
-                    Screen.Exclusive -> ExclusiveScreen(onNewsClick = { selectedNewsId = it })
+                    Screen.Exclusive -> ExclusiveScreen(onNewsClick = { selectedNewsHash = it })
                     Screen.Support -> SupportScreen(onBack = { currentScreen = Screen.ForYou })
-                    Screen.QrScanner -> QrScannerScreen(onQrScanned = { _ -> currentScreen = Screen.ForYou }, onBack = { currentScreen = Screen.ForYou })
-                    Screen.SearchResults -> SearchPageContent(isLoading = isSearching, results = searchResults, query = searchQuery, onNewsClick = { selectedNewsId = it })
-                    else -> NewsScreen(onNewsClick = { selectedNewsId = it })
+                    Screen.QrScanner -> QrScannerScreen(
+                        onQrScanned = { hash ->
+                            selectedNewsHash = hash
+                            currentScreen = Screen.ForYou 
+                        },
+                        onBack = { currentScreen = Screen.ForYou }
+                    )
+                    Screen.SearchResults -> SearchPageContent(isLoading = isSearching, results = searchResults, query = searchQuery, onNewsClick = { selectedNewsHash = it })
+                    else -> NewsScreen(onNewsClick = { selectedNewsHash = it })
                 }
             }
         }
@@ -335,7 +343,7 @@ fun HomeScreen(onLogout: () -> Unit) {
 }
 
 @Composable
-fun SearchPageContent(isLoading: Boolean, results: List<NewsItem>, query: String, onNewsClick: (Int) -> Unit) {
+fun SearchPageContent(isLoading: Boolean, results: List<NewsItem>, query: String, onNewsClick: (String) -> Unit) {
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
         Text(text = "Search results for \"$query\"", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
         Spacer(modifier = Modifier.height(16.dp))
@@ -345,7 +353,7 @@ fun SearchPageContent(isLoading: Boolean, results: List<NewsItem>, query: String
             Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text("No results found.", color = Color.Gray) }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                items(results) { item -> NewsCard(item = item, onClick = { item.id?.let { onNewsClick(it) } }) }
+                items(results) { item -> NewsCard(item = item, onClick = { item.hash?.let { onNewsClick(it) } }) }
             }
         }
     }

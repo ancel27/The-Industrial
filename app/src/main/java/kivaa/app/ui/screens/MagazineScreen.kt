@@ -1,5 +1,7 @@
 package kivaa.app.ui.screens
 
+import android.content.Intent
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
@@ -13,7 +15,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -40,6 +44,7 @@ import kivaa.app.data.local.PreferenceManager
 import kivaa.app.data.model.MagazineItem
 import kivaa.app.data.remote.RetrofitInstance
 import kivaa.app.ui.theme.ThemeManager
+import kivaa.app.utils.ShareUtils
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,7 +87,6 @@ fun MagazineScreen() {
                     val list = response.body()?.magazines ?: emptyList()
                     magazines = list
                     if (selectedMagazine == null && list.isNotEmpty()) {
-                        // Fetch full detail for the first magazine to get intro
                         list.first().hash?.let { fetchDetail(it) }
                     }
                     errorMessage = null
@@ -120,50 +124,53 @@ fun MagazineScreen() {
         },
         modifier = Modifier.fillMaxSize()
     ) {
-        if (isLoading && !isRefreshing && magazines.isEmpty()) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
+        Column(modifier = Modifier.fillMaxSize()) {
+            // 1. Fixed Header Area: Selected Magazine
+            selectedMagazine?.let { mag ->
+                Box(modifier = Modifier.padding(16.dp)) {
+                    MagazineDetailCard(mag)
+                }
             }
-        } else if (errorMessage != null && magazines.isEmpty()) {
-            Text(text = errorMessage!!, modifier = Modifier.align(Alignment.Center), color = Color.Red)
-        } else if (magazines.isEmpty() && !isLoading) {
-            Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No magazines available.")
-            }
-        } else {
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                // Featured Magazine Header Card
-                selectedMagazine?.let { mag ->
+
+            // 2. Scrollable Body: All Editions Grid
+            if (isLoading && !isRefreshing && magazines.isEmpty()) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else if (errorMessage != null && magazines.isEmpty()) {
+                Text(text = errorMessage!!, modifier = Modifier.align(Alignment.CenterHorizontally).padding(16.dp), color = Color.Red)
+            } else if (magazines.isEmpty() && !isLoading) {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text("No magazines available.")
+                }
+            } else {
+                LazyVerticalGrid(
+                    columns = GridCells.Fixed(3),
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
                     item(span = { GridItemSpan(3) }) {
-                        MagazineDetailCard(mag)
+                        Text(
+                            text = "All Editions",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
                     }
-                }
 
-                item(span = { GridItemSpan(3) }) {
-                    Text(
-                        text = "All Editions",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
-                    )
-                }
-
-                items(magazines) { magazine ->
-                    MagazineThumbnail(
-                        magazine = magazine,
-                        isSelected = selectedMagazine?.id == magazine.id,
-                        onClick = { 
-                            scope.launch {
-                                magazine.hash?.let { fetchDetail(it) }
+                    items(magazines) { magazine ->
+                        MagazineThumbnail(
+                            magazine = magazine,
+                            isSelected = selectedMagazine?.hash == magazine.hash,
+                            onClick = { 
+                                scope.launch {
+                                    magazine.hash?.let { fetchDetail(it) }
+                                }
                             }
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -172,10 +179,35 @@ fun MagazineScreen() {
 
 @Composable
 fun MagazineDetailCard(magazine: MagazineItem) {
+    val context = LocalContext.current
     val config = ThemeManager.currentConfig.value
+    val preferenceManager = remember { PreferenceManager(context) }
+    val savedAppKey by preferenceManager.appKey.collectAsState(initial = null)
+    val userId = ThemeManager.userId.value
+    val scope = rememberCoroutineScope()
+    
+    var isLiked by remember(magazine.hash) { mutableStateOf(false) }
+    var isBookmarked by remember(magazine.hash) { mutableStateOf(false) }
+    var showReviewDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(magazine.hash, userId, savedAppKey) {
+        if (userId != null && !savedAppKey.isNullOrBlank() && magazine.hash != null) {
+            try {
+                val cleanKey = savedAppKey!!.trim()
+                val likesRes = RetrofitInstance.api.viewLikes(cleanKey, userId)
+                if (likesRes.isSuccessful) {
+                    isLiked = likesRes.body()?.responseDetails?.any { it.hash == magazine.hash } ?: false
+                }
+                val bookmarksRes = RetrofitInstance.api.viewBookmarks(cleanKey, userId)
+                if (bookmarksRes.isSuccessful) {
+                    isBookmarked = bookmarksRes.body()?.responseDetails?.any { it.hash == magazine.hash } ?: false
+                }
+            } catch (e: Exception) {}
+        }
+    }
+
     val placeholderUrl = remember(config) {
-        val cdn = config?.cdnUrl ?: ""
-        if (cdn.endsWith("/")) "${cdn}content/placeholder.jpg" else "${cdn}/content/placeholder.jpg"
+        config?.imageUrl1 ?: config?.imageUrl2 ?: ""
     }
     
     var isExpanded by remember { mutableStateOf(false) }
@@ -192,7 +224,6 @@ fun MagazineDetailCard(magazine: MagazineItem) {
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.Top
             ) {
-                // Magazine Cover
                 AsyncImage(
                     model = magazine.image,
                     placeholder = rememberAsyncImagePainter(model = placeholderUrl),
@@ -208,7 +239,6 @@ fun MagazineDetailCard(magazine: MagazineItem) {
 
                 Spacer(modifier = Modifier.width(16.dp))
 
-                // Details
                 Column(modifier = Modifier.weight(1f)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -221,12 +251,17 @@ fun MagazineDetailCard(magazine: MagazineItem) {
                             fontWeight = FontWeight.Bold,
                             color = Color.Black
                         )
-                        Icon(
-                            imageVector = Icons.Default.Info,
-                            contentDescription = "Details",
-                            modifier = Modifier.size(20.dp),
-                            tint = Color.Gray
-                        )
+                        IconButton(
+                            onClick = { ShareUtils.shareLink(context, magazine.title ?: "Magazine Edition", magazine.magazineUrl ?: "") },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.Share,
+                                contentDescription = "Share",
+                                modifier = Modifier.size(20.dp),
+                                tint = Color.Gray
+                            )
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(8.dp))
@@ -237,19 +272,77 @@ fun MagazineDetailCard(magazine: MagazineItem) {
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Action Icons
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.spacedBy(16.dp)
                     ) {
-                        Icon(Icons.Outlined.ThumbUp, contentDescription = "Like", modifier = Modifier.size(22.dp))
+                        IconButton(
+                            onClick = {
+                                if (userId != null && !savedAppKey.isNullOrBlank() && magazine.hash != null) {
+                                    scope.launch {
+                                        val key = savedAppKey!!.trim()
+                                        val res = if (isLiked) {
+                                            RetrofitInstance.api.unlike(key, userId, "magazine", magazine.hash, key, userId, "magazine", magazine.hash)
+                                        } else {
+                                            RetrofitInstance.api.like(key, userId, "magazine", magazine.hash, key, userId, "magazine", magazine.hash)
+                                        }
+                                        if (res.isSuccessful) isLiked = !isLiked
+                                    }
+                                }
+                            },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isLiked) Icons.Default.ThumbUp else Icons.Outlined.ThumbUpOffAlt,
+                                contentDescription = "Like",
+                                tint = if (isLiked) MaterialTheme.colorScheme.primary else Color.Gray,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+
                         Text("|", color = Color.LightGray)
-                        Icon(Icons.Outlined.Share, contentDescription = "Share", modifier = Modifier.size(22.dp))
+
+                        IconButton(
+                            onClick = {
+                                if (userId != null && !savedAppKey.isNullOrBlank() && magazine.hash != null) {
+                                    scope.launch {
+                                        val key = savedAppKey!!.trim()
+                                        val res = if (isBookmarked) {
+                                            RetrofitInstance.api.unbookmark(key, userId, "magazine", magazine.hash, key, userId, "magazine", magazine.hash)
+                                        } else {
+                                            RetrofitInstance.api.bookmark(key, userId, "magazine", magazine.hash, key, userId, "magazine", magazine.hash)
+                                        }
+                                        if (res.isSuccessful) isBookmarked = !isBookmarked
+                                    }
+                                }
+                            },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isBookmarked) Icons.Default.Bookmark else Icons.Outlined.BookmarkBorder,
+                                contentDescription = "Bookmark",
+                                tint = if (isBookmarked) MaterialTheme.colorScheme.primary else Color.Gray,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
+
+                        Text("|", color = Color.LightGray)
+
+                        IconButton(
+                            onClick = { showReviewDialog = true },
+                            modifier = Modifier.size(24.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Outlined.StarOutline,
+                                contentDescription = "Review",
+                                tint = Color.Gray,
+                                modifier = Modifier.size(22.dp)
+                            )
+                        }
                     }
                 }
             }
             
-            // --- Expandable Description Section ---
             if (!magazine.intro.isNullOrBlank()) {
                 Spacer(modifier = Modifier.height(16.dp))
                 HorizontalDivider(color = Color.LightGray.copy(alpha = 0.3f))
@@ -291,7 +384,28 @@ fun MagazineDetailCard(magazine: MagazineItem) {
 
             if (magazine.hasAccess == "1") {
                 Button(
-                    onClick = { /* TODO: Open Reader */ },
+                    onClick = {
+                        val apiUrl = magazine.magazineUrl ?: ""
+                        if (apiUrl.isNotBlank()) {
+                            // The API URL already contains the tag, so we just clean it up
+                            var finalUrl = apiUrl
+                            
+                            // 1. Enforce trailing slash
+                            if (!finalUrl.endsWith("/")) finalUrl += "/"
+                            
+                            // 2. Branded Domain Swap (Ensures it matches your verified Chrome link)
+                            finalUrl = finalUrl.replace("cdntie9m3y9sg7b.cdn.e2enetworks.net", "cdnti.kivaa.io.in")
+                            
+                            // Debug Toast for confirmation
+                            Toast.makeText(context, "Opening: $finalUrl", Toast.LENGTH_SHORT).show()
+
+                            val intent = Intent(context, kivaa.app.MagazineReaderActivity::class.java).apply {
+                                putExtra("MAGAZINE_URL", finalUrl)
+                                putExtra("MAGAZINE_TITLE", magazine.date ?: "Magazine Reader")
+                            }
+                            context.startActivity(intent)
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
@@ -300,7 +414,22 @@ fun MagazineDetailCard(magazine: MagazineItem) {
                 }
             } else {
                 Button(
-                    onClick = { /* TODO: Subscribe */ },
+                    onClick = {
+                        val apiUrl = magazine.magazineUrl ?: ""
+                        if (apiUrl.isNotBlank()) {
+                            var finalUrl = apiUrl
+                            if (!finalUrl.endsWith("/")) finalUrl += "/"
+                            finalUrl = finalUrl.replace("cdntie9m3y9sg7b.cdn.e2enetworks.net", "cdnti.kivaa.io.in")
+                            
+                            Toast.makeText(context, "Opening: $finalUrl", Toast.LENGTH_SHORT).show()
+
+                            val intent = Intent(context, kivaa.app.MagazineReaderActivity::class.java).apply {
+                                putExtra("MAGAZINE_URL", finalUrl)
+                                putExtra("MAGAZINE_TITLE", magazine.date ?: "Magazine Reader")
+                            }
+                            context.startActivity(intent)
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(8.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.secondary)
@@ -309,6 +438,61 @@ fun MagazineDetailCard(magazine: MagazineItem) {
                 }
             }
         }
+    }
+
+    if (showReviewDialog) {
+        var reviewText by remember { mutableStateOf("") }
+        var isSubmitting by remember { mutableStateOf(false) }
+
+        AlertDialog(
+            onDismissRequest = { if (!isSubmitting) showReviewDialog = false },
+            title = { Text("Write a Review", fontWeight = FontWeight.Bold) },
+            text = {
+                OutlinedTextField(
+                    value = reviewText,
+                    onValueChange = { reviewText = it },
+                    placeholder = { Text("Share your thoughts on this edition...") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3,
+                    maxLines = 5,
+                    enabled = !isSubmitting
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (reviewText.isNotBlank() && userId != null && !savedAppKey.isNullOrBlank() && magazine.hash != null) {
+                            scope.launch {
+                                isSubmitting = true
+                                try {
+                                    val key = savedAppKey!!.trim()
+                                    val response = RetrofitInstance.api.addReview(
+                                        key, userId, "magazine", magazine.hash, reviewText.trim(),
+                                        key, userId, "magazine", magazine.hash, reviewText.trim()
+                                    )
+                                    if (response.isSuccessful) {
+                                        Toast.makeText(context, "Review submitted successfully!", Toast.LENGTH_SHORT).show()
+                                        showReviewDialog = false
+                                    }
+                                } catch (e: Exception) {
+                                    Toast.makeText(context, "Failed to submit review", Toast.LENGTH_SHORT).show()
+                                } finally {
+                                    isSubmitting = false
+                                }
+                            }
+                        }
+                    },
+                    enabled = reviewText.isNotBlank() && !isSubmitting
+                ) {
+                    if (isSubmitting) CircularProgressIndicator(modifier = Modifier.size(20.dp), color = Color.White) else Text("Submit")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showReviewDialog = false }, enabled = !isSubmitting) {
+                    Text("Cancel")
+                }
+            }
+        )
     }
 }
 
@@ -324,8 +508,7 @@ fun DetailLabelValue(label: String, value: String) {
 fun MagazineThumbnail(magazine: MagazineItem, isSelected: Boolean, onClick: () -> Unit) {
     val config = ThemeManager.currentConfig.value
     val placeholderUrl = remember(config) {
-        val cdn = config?.cdnUrl ?: ""
-        if (cdn.endsWith("/")) "${cdn}content/placeholder.jpg" else "${cdn}/content/placeholder.jpg"
+        config?.imageUrl1 ?: config?.imageUrl2 ?: ""
     }
 
     Column(
@@ -348,7 +531,6 @@ fun MagazineThumbnail(magazine: MagazineItem, isSelected: Boolean, onClick: () -
                     .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                // Layer 1: Branded Placeholder (Always at the base)
                 AsyncImage(
                     model = placeholderUrl,
                     contentDescription = null,
@@ -357,7 +539,6 @@ fun MagazineThumbnail(magazine: MagazineItem, isSelected: Boolean, onClick: () -
                     alpha = 0.6f
                 )
                 
-                // Layer 2: Actual Magazine Cover (Loads on top)
                 AsyncImage(
                     model = magazine.image,
                     contentDescription = null,

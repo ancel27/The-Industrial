@@ -2,6 +2,7 @@ package kivaa.app
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.*
@@ -28,7 +29,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         deepLinkData.value = intent.data
-        enableEdgeToEdge()
+        
+        // Force light status bar icons (dark symbols) by default
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.light(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            )
+        )
+
         setContent {
             val context = LocalContext.current
             val preferenceManager = remember { PreferenceManager(context) }
@@ -58,14 +67,38 @@ class MainActivity : ComponentActivity() {
                         screen = segments.getOrNull(0)
                         id = segments.getOrNull(1)
                     } else if (uri.scheme == "http" || uri.scheme == "https") {
-                        if (segments.size >= 2 && segments[0] == "app") {
-                            // Legacy: /app/factory
-                            platformName = segments[1]
-                        } else if (segments.isNotEmpty()) {
-                            // New: /factoryfuture/watch/123
-                            platformName = segments[0]
-                            screen = segments.getOrNull(1)
-                            id = segments.getOrNull(2)
+                        val host = uri.host ?: ""
+                        if (host == "kivaa.io.in") {
+                            if (segments.size >= 2 && segments[0] == "app") {
+                                // Legacy: /app/factory
+                                platformName = segments[1]
+                            } else if (segments.isNotEmpty()) {
+                                // New: /factoryfuture/watch/123
+                                platformName = segments[0]
+                                screen = segments.getOrNull(1)
+                                id = segments.getOrNull(2)
+                            }
+                        } else {
+                            // Branded Domain: https://www.factoryfuture.in/news/59ab98c72a/slug
+                            // Host defines the platform
+                            platformName = when (host) {
+                                "www.factoryfuture.in", "factoryfuture.in" -> "factory"
+                                "www.theindustrial.in", "theindustrial.in", "www.industrial.in", "industrial.in" -> "industrial"
+                                "www.thingsofbusiness.com", "thingsofbusiness.com" -> "business"
+                                "www.mobilityhyperdrive.in", "mobilityhyperdrive.in" -> "mobility"
+                                "www.bankingontechnology.com", "bankingontechnology.com" -> "banking"
+                                "www.technologue.in", "technologue.in" -> "technologue"
+                                else -> host.substringBefore(".")
+                            }
+                            
+                            // Check for /news/[hash] structure
+                            if (segments.size >= 2 && segments[0].lowercase() == "news") {
+                                screen = "news"
+                                id = segments[1] // Extracts the hash (e.g. 59ab98c72a)
+                            } else {
+                                screen = segments.getOrNull(0)
+                                id = segments.getOrNull(1)
+                            }
                         }
                     }
                     
