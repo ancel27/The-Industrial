@@ -17,7 +17,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.TheIndustrial"
-        android:usesCleartextTraffic="true">
+        android:usesCleartextTraffic="true"
+        tools:replace="android:allowBackup">
         <activity
             android:name="kivaa.app.MainActivity"
             android:exported="true"
@@ -79,10 +80,6 @@
             android:name="kivaa.app.MagazineReaderActivity"
             android:exported="false"
             android:configChanges="orientation|screenSize"
-            android:theme="@style/Theme.TheIndustrial" />
-        <activity
-            android:name="kivaa.app.PaymentActivity"
-            android:exported="false"
             android:theme="@style/Theme.TheIndustrial" />
     </application>
 

@@ -2,6 +2,7 @@ package kivaa.app.ui.screens
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -18,6 +19,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -30,7 +32,7 @@ import kivaa.app.ui.theme.ThemeManager
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun OrderScreen(onBack: () -> Unit) {
+fun OrderScreen(onBack: () -> Unit, onManageBenefits: () -> Unit = {}) {
     val context = LocalContext.current
     val preferenceManager = remember { PreferenceManager(context) }
     val appKey by preferenceManager.appKey.collectAsState(initial = null)
@@ -111,6 +113,27 @@ fun OrderScreen(onBack: () -> Unit) {
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 8.dp)
                             )
+                            
+                            // Call to action for Entitlements
+                            Card(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp).clickable { onManageBenefits() },
+                                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(
+                                        imageVector = Icons.Default.Receipt,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text("Unused Digital Benefits", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                        Text("Claim your active plan features or gift them.", fontSize = 11.sp)
+                                    }
+                                    Text(">", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                                }
+                            }
                         }
                         items(orders) { order ->
                             OrderItem(order)
@@ -172,14 +195,26 @@ fun OrderItem(order: OrderDetail) {
         }
 
         // Status Badge
+        val statusText = order.planStatus ?: order.status ?: "Pending"
+        val statusColor = when (statusText.lowercase()) {
+            "active", "success", "approved" -> Color(0xFF2E7D32) // Branded Green
+            "payment_failed", "failed", "cancelled" -> Color(0xFFD32F2F) // Branded Red
+            else -> Color.DarkGray // Default Grey
+        }
+        val statusBg = when (statusText.lowercase()) {
+            "active", "success", "approved" -> Color(0xFFE8F5E9)
+            "payment_failed", "failed", "cancelled" -> Color(0xFFFFEBEE)
+            else -> Color(0xFFF2F2F2)
+        }
+
         Surface(
             shape = RoundedCornerShape(12.dp),
-            color = Color(0xFFF2F2F2)
+            color = statusBg
         ) {
             Text(
-                text = (order.status ?: "Pending").uppercase(),
+                text = statusText.uppercase(),
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp),
-                color = Color.DarkGray,
+                color = statusColor,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Bold
             )

@@ -389,6 +389,45 @@ interface ApiService {
         @Header("APPKEY") appKey: String
     ): Response<PaymentMethodResponse>
 
+    @POST("timobile/subscribe/getpaymentpage")
+    suspend fun getPaymentPageUrl(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int,
+        @Query("APPKEY") appKeyQ: String,
+        @Query("USRID") userIdQ: Int
+    ): Response<OrderResponse>
+
+    @POST("timobile/subscribe/preview")
+    suspend fun getOrderPreview(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int,
+        @Header("PLAID") planId: Int,
+        @Header("OFFERID") offerId: Int? = null,
+        @Header("OFFER_CODE") offerCode: String? = null,
+        @Query("APPKEY") appKeyQ: String,
+        @Query("USRID") userIdQ: Int,
+        @Query("PLAID") planIdQ: Int,
+        @Query("OFFERID") offerIdQ: Int? = null,
+        @Query("OFFER_CODE") offerCodeQ: String? = null
+    ): Response<PreviewResponse>
+
+    @POST("timobile/subscribe/validate-offer-code")
+    suspend fun validateOfferCode(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int,
+        @Header("PLAID") planId: Int,
+        @Header("OFFER_CODE") offerCode: String,
+        @Query("APPKEY") appKeyQ: String,
+        @Query("USRID") userIdQ: Int,
+        @Query("PLAID") planIdQ: Int,
+        @Query("OFFER_CODE") offerCodeQ: String
+    ): Response<PreviewResponse>
+
+    @GET("timobile/platform/list")
+    suspend fun getActivePlatforms(
+        @Header("APPKEY") appKey: String
+    ): Response<PlatformListResponse>
+
     @POST("timobile/subscribe/order")
     suspend fun createOrder(
         @Header("APPKEY") appKey: String,
@@ -405,6 +444,7 @@ interface ApiService {
         @Header("REFERENCE_NO") referenceNo: String? = null,
         @Header("PAID_AT") paidAt: String? = null,
         @Header("PAYMENT_NOTES") notes: String? = null,
+        @Header("ENVIRONMENT") environment: String? = "production",
         @Query("APPKEY") appKeyQ: String,
         @Query("USRID") userIdQ: Int,
         @Query("PLAID") planIdQ: Int,
@@ -418,7 +458,8 @@ interface ApiService {
         @Query("PROVIDER_SIGNATURE") pgSignatureQ: String? = null,
         @Query("REFERENCE_NO") referenceNoQ: String? = null,
         @Query("PAID_AT") paidAtQ: String? = null,
-        @Query("PAYMENT_NOTES") notesQ: String? = null
+        @Query("PAYMENT_NOTES") notesQ: String? = null,
+        @Query("ENVIRONMENT") environmentQ: String? = "production"
     ): Response<OrderResponse>
 
     @GET("timobile/subscribe/orders")
@@ -434,6 +475,50 @@ interface ApiService {
         @Header("APPKEY") appKey: String,
         @Header("USRID") userId: Int
     ): Response<SubscriptionStatusResponse>
+
+    // --- Entitlements & Gifting ---
+    @GET("timobile/subscribe/entitlements")
+    suspend fun getEntitlements(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int
+    ): Response<EntitlementResponse>
+
+    @POST("timobile/subscribe/redeem-entitlement")
+    suspend fun redeemEntitlementSelf(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int,
+        @Header("ENTITLEMENT_ID") entitlementId: Int,
+        @Header("ACCESS_PLATFORM_ID") platformId: Int
+    ): Response<RedeemResponse>
+
+    @POST("timobile/subscribe/gift-otp")
+    suspend fun sendGiftOtp(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int,
+        @Header("ENTITLEMENT_ID") entitlementId: Int
+    ): Response<RedeemResponse>
+
+    @POST("timobile/subscribe/gift-entitlement")
+    suspend fun giftToExistingUser(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int,
+        @Header("ENTITLEMENT_ID") entitlementId: Int,
+        @Header("RECIPIENT_USER_ID") recipientIdOrEmail: String,
+        @Header("ACCESS_PLATFORM_ID") platformId: Int,
+        @Header("OTP") otp: String
+    ): Response<RedeemResponse>
+
+    @POST("timobile/subscribe/gift-create-recipient")
+    suspend fun createRecipientAndGift(
+        @Header("APPKEY") appKey: String,
+        @Header("USRID") userId: Int,
+        @Header("ENTITLEMENT_ID") entitlementId: Int,
+        @Header("RECIPIENT_NAME") name: String,
+        @Header("RECIPIENT_EMAIL") email: String,
+        @Header("RECIPIENT_MOBILE") mobile: String? = null,
+        @Header("ACCESS_PLATFORM_ID") platformId: Int,
+        @Header("OTP") otp: String
+    ): Response<RedeemResponse>
 
     @GET("timobile/subscribe/order-status")
     suspend fun getSpecificOrderStatus(

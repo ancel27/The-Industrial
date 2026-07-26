@@ -25,7 +25,6 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "RAZORPAY_KEY", "\"${props.getProperty("RAZORPAY_KEY", "rzp_test_placeholder")}\"")
     }
 
     // --- Product Flavors Configuration ---
@@ -144,15 +143,13 @@ dependencies {
 
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.datastore.preferences)
+    implementation("androidx.swiperefreshlayout:swiperefreshlayout:1.2.0-alpha01")
 
     implementation(libs.androidx.camera.camera2)
     implementation(libs.androidx.camera.lifecycle)
     implementation(libs.androidx.camera.view)
     implementation(libs.mlkit.barcode.scanning)
     
-    // Razorpay Integration
-    implementation(libs.razorpay.checkout)
-
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)

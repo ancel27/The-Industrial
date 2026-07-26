@@ -22,6 +22,8 @@ class PreferenceManager(private val context: Context) {
         val CACHED_CONFIG = stringPreferencesKey("cached_config")
         val USER_ID = intPreferencesKey("user_id")
         val USER_NAME = stringPreferencesKey("user_name")
+        val USER_EMAIL = stringPreferencesKey("user_email")
+        val ONBOARDING_COMPLETED = booleanPreferencesKey("onboarding_completed")
         val CACHED_NEWS = stringPreferencesKey("cached_news")
         val CACHED_FOR_YOU = stringPreferencesKey("cached_for_you")
         val CACHED_ARTICLES = stringPreferencesKey("cached_articles")
@@ -43,6 +45,14 @@ class PreferenceManager(private val context: Context) {
 
     val userName: Flow<String?> = context.dataStore.data.map { preferences ->
         preferences[USER_NAME]
+    }
+
+    val userEmail: Flow<String?> = context.dataStore.data.map { preferences ->
+        preferences[USER_EMAIL]
+    }
+
+    val isOnboardingCompleted: Flow<Boolean> = context.dataStore.data.map { preferences ->
+        preferences[ONBOARDING_COMPLETED] ?: false
     }
 
     private fun deserializeNews(json: String?): List<NewsItem>? {
@@ -132,6 +142,18 @@ class PreferenceManager(private val context: Context) {
     suspend fun saveAppKey(key: String) {
         context.dataStore.edit { preferences ->
             preferences[APP_KEY] = key
+        }
+    }
+
+    suspend fun saveUserEmail(email: String) {
+        context.dataStore.edit { preferences ->
+            preferences[USER_EMAIL] = email
+        }
+    }
+
+    suspend fun setOnboardingCompleted(completed: Boolean) {
+        context.dataStore.edit { preferences ->
+            preferences[ONBOARDING_COMPLETED] = completed
         }
     }
 

@@ -5,6 +5,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.compose.runtime.*
 import androidx.compose.ui.platform.LocalContext
 import kotlinx.coroutines.launch
@@ -12,6 +13,7 @@ import kivaa.app.data.local.PreferenceManager
 import kivaa.app.data.remote.RetrofitInstance
 import kivaa.app.ui.screens.AuthContainer
 import kivaa.app.ui.screens.HomeScreen
+import kivaa.app.ui.screens.OnboardingScreen
 import kivaa.app.ui.theme.TheIndustrialTheme
 import kivaa.app.ui.theme.ThemeManager
 import kivaa.app.utils.NavigationManager
@@ -37,11 +39,18 @@ class MainActivity : ComponentActivity() {
                 android.graphics.Color.TRANSPARENT
             )
         )
+        
+        // Ensure status bar icons are visible (dark) for light background
+        WindowInsetsControllerCompat(window, window.decorView).apply {
+            isAppearanceLightStatusBars = true
+            isAppearanceLightNavigationBars = true
+        }
 
         setContent {
             val context = LocalContext.current
             val preferenceManager = remember { PreferenceManager(context) }
             val isLoggedIn by preferenceManager.isLoggedIn.collectAsState(initial = false)
+            val isOnboardingCompleted by preferenceManager.isOnboardingCompleted.collectAsState(initial = false)
             val savedUserId by preferenceManager.userId.collectAsState(initial = null)
             val savedUserName by preferenceManager.userName.collectAsState(initial = null)
             val savedAppKey by preferenceManager.appKey.collectAsState(initial = null)
@@ -171,10 +180,19 @@ class MainActivity : ComponentActivity() {
                             preferenceManager.setLoggedIn(true, userId, userName)
                         }
                     })
+                } else if (!isOnboardingCompleted) {
+                    OnboardingScreen(onFinish = {
+                        scope.launch {
+                            preferenceManager.setOnboardingCompleted(true)
+                        }
+                    })
                 } else {
                     HomeScreen(onLogout = {
                         scope.launch {
                             preferenceManager.clearLogin()
+                            // Also reset onboarding on logout to allow re-flow if needed, 
+                            // or keep true to only show once per installation.
+                            // preferenceManager.setOnboardingCompleted(false)
                         }
                     })
                 }

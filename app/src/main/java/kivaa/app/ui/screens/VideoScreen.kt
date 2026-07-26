@@ -51,15 +51,6 @@ data class VideoItem(
 fun VideoScreen() {
     var selectedVideo by remember { mutableStateOf<VideoItem?>(null) }
     
-    // --- Force White Icons for Cinematic Black Screen ---
-    val view = androidx.compose.ui.platform.LocalView.current
-    if (!view.isInEditMode) {
-        SideEffect {
-            val window = (view.context as android.app.Activity).window
-            androidx.core.view.WindowCompat.getInsetsController(window, view).isAppearanceLightStatusBars = false
-        }
-    }
-
     val sampleVideos = listOf(
         VideoItem(1, "Xinhua Silk Road: Feeling warmth of Silk Road, discovering vibrant everyday life of...", "Xinhua Silk Road", "0 views", "3 Jul 2026", "00:00", "https://d28f47c49dt9uw.cloudfront.net/content/1780338802-GameChange_Energy.webp"),
         VideoItem(2, "International Naval Review on deck.", "New York Stock Exchange", "0 views", "2 Jul 2026", "00:00", "https://d28f47c49dt9uw.cloudfront.net/content/1780338800-DXC_Technology_Company-DXC_Launches_One_of_Its_Most_Powerful_Gro.mp4?id=OA2643880"),

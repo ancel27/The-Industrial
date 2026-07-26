@@ -28,12 +28,13 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
-import kotlinx.coroutines.launch
-import kivaa.app.data.local.PreferenceManager
-import kivaa.app.data.model.NewsItem
+import kivaa.app.data.model.MagazineItem
 import kivaa.app.data.remote.RetrofitInstance
 import kivaa.app.ui.theme.ThemeManager
 import kivaa.app.utils.DateUtils
+import kotlinx.coroutines.launch
+import kivaa.app.data.local.PreferenceManager
+import kivaa.app.data.model.NewsItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -211,6 +212,37 @@ fun NewsCard(
     val placeholderUrl = remember(config) {
         config?.imageUrl1 ?: config?.imageUrl2 ?: ""
     }
+    
+    // Support nested content for Bookmark/Like responses
+    val displayItem = item.nestedContent ?: item
+    
+    // Support magazine type in bookmarks/likes
+    val isMagazine = item.entityType == "magazine"
+    val magazineHash = item.entityId ?: item.hash
+    
+    var magazineData by remember { mutableStateOf<MagazineItem?>(null) }
+    val appKeyFlow = remember { PreferenceManager(context).appKey }
+    val appKey by appKeyFlow.collectAsState(initial = null)
+
+    if (isMagazine && magazineData == null) {
+        LaunchedEffect(magazineHash, appKey) {
+            if (!magazineHash.isNullOrBlank() && !appKey.isNullOrBlank()) {
+                try {
+                    val k = appKey!!.trim()
+                    val res = RetrofitInstance.api.getMagazineDetail(k, magazineHash, k, magazineHash)
+                    if (res.isSuccessful) {
+                        magazineData = res.body()?.magazines?.firstOrNull()
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("MagazineFetch", "Failed to fetch $magazineHash", e)
+                }
+            }
+        }
+    }
+
+    val title = if (isMagazine) magazineData?.title ?: "Loading Magazine..." else displayItem.title ?: "No Title"
+    val image = if (isMagazine) magazineData?.image else displayItem.image
+    val date = if (isMagazine) magazineData?.date else displayItem.startDate
 
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
@@ -224,16 +256,34 @@ fun NewsCard(
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min)
         ) {
-            AsyncImage(
-                model = item.image,
-                error = rememberAsyncImagePainter(model = placeholderUrl),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.LightGray),
-                contentScale = ContentScale.Crop
-            )
+            Box(modifier = Modifier.size(100.dp)) {
+                AsyncImage(
+                    model = image,
+                    error = rememberAsyncImagePainter(model = placeholderUrl),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .clip(RoundedCornerShape(8.dp))
+                        .background(Color.LightGray),
+                    contentScale = ContentScale.Crop
+                )
+                
+                if (isMagazine) {
+                    Surface(
+                        modifier = Modifier.padding(4.dp).align(Alignment.TopStart),
+                        color = ThemeManager.getColor(config?.theme?.primary, Color.Black).copy(alpha = 0.8f),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text(
+                            "MAG",
+                            color = Color.White,
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(horizontal = 4.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.width(12.dp))
 
@@ -242,25 +292,29 @@ fun NewsCard(
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = item.title ?: "No Title",
+                    text = title,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
                     color = MaterialTheme.colorScheme.onSurface
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Text(
-                    text = item.briefIntro ?: "",
-                    style = MaterialTheme.typography.bodySmall,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                if (!item.startDate.isNullOrBlank()) {
+                
+                if (!isMagazine) {
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = DateUtils.formatDate(item.startDate),
+                        text = displayItem.briefIntro ?: "",
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+                
+                if (!date.isNullOrBlank()) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = if (isMagazine) date else DateUtils.formatDate(date),
                         style = MaterialTheme.typography.labelSmall,
                         color = Color.Gray
                     )

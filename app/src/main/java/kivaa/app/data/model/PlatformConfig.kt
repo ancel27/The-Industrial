@@ -12,6 +12,7 @@ data class PlatformConfig(
     @SerializedName("platform_id") val platformId: Int? = null,
     @SerializedName("platformname") val platformName: String? = null,
     @SerializedName("sitetagline") val siteTagline: String? = null,
+    @SerializedName("db_key") val dbKey: String? = null,
     @SerializedName("baseurl") val baseUrl: String? = null,
     @SerializedName("logo_url") val logoUrl: String? = null,
     @SerializedName("favicon_url") val faviconUrl: String? = null,
@@ -21,7 +22,14 @@ data class PlatformConfig(
     @SerializedName("theme") val theme: ThemeConfig? = null,
     @SerializedName("about") val about: String? = null,
     @SerializedName("contactemail") val contactEmail: String? = null,
-    @SerializedName("phone") val phone: String? = null
+    @SerializedName("phone") val phone: String? = null,
+    @SerializedName("is_current_platform") val isCurrentPlatform: Int? = null
+)
+
+data class PlatformListResponse(
+    @SerializedName("ResponseHeader") val responseHeader: Int? = null,
+    @SerializedName("Total") val total: Int? = null,
+    @SerializedName("ReseponseDetails") val responseDetails: List<PlatformConfig>? = null
 )
 
 data class ThemeConfig(
@@ -73,7 +81,12 @@ data class NewsItem(
     @SerializedName("brief_intro") val briefIntro: String? = null,
     @SerializedName("coverimage") val coverImage: String? = null,
     @SerializedName("image") val image: String? = null,
-    @SerializedName("link") val link: String? = null
+    @SerializedName("link") val link: String? = null,
+    
+    // Bookmark/Like metadata fields
+    @SerializedName("entity_type") val entityType: String? = null,
+    @SerializedName("entity_id") val entityId: String? = null,
+    @SerializedName("content") val nestedContent: NewsItem? = null
 )
 
 // --- News Detail Models ---
@@ -220,7 +233,38 @@ data class OfferDetail(
     @SerializedName("offername") val name: String? = null,
     @SerializedName("offertype") val type: String? = null, // "fixed" or "percent"
     @SerializedName("offerdiscount") val discount: String? = null,
-    @SerializedName("offercode") val code: String? = null
+    @SerializedName("offercode") val code: String? = null,
+    @SerializedName("offer_kind") val kind: String? = null // "discount" or "addon"
+)
+
+// --- Preview & Validation Models ---
+
+data class PreviewResponse(
+    @SerializedName("ResponseHeader") val responseHeader: Int? = null,
+    @SerializedName("Total") val total: Int? = null,
+    @SerializedName("ReseponseDetails") val responseDetails: List<PreviewDetail>? = null
+)
+
+data class PreviewDetail(
+    @SerializedName("success") val success: Boolean? = null,
+    @SerializedName("valid") val valid: Boolean? = null,
+    @SerializedName("offer_id") val offerId: Int? = null,
+    @SerializedName("offer_kind") val offerKind: String? = null,
+    @SerializedName("offer_code") val offerCode: String? = null,
+    @SerializedName("subtotal_amount") val subtotal: Double? = null,
+    @SerializedName("discount_amount") val discount: Double? = null,
+    @SerializedName("taxable_amount") val taxable: Double? = null,
+    @SerializedName("gst_amount") val gst: Double? = null,
+    @SerializedName("total_amount") val total: Double? = null,
+    @SerializedName("currency") val currency: String? = null,
+    @SerializedName("addon_benefit") val addonBenefit: AddonBenefit? = null,
+    @SerializedName("message") val message: String? = null
+)
+
+data class AddonBenefit(
+    @SerializedName("plan_id") val planId: Int? = null,
+    @SerializedName("plan_name") val planName: String? = null,
+    @SerializedName("duration_days") val duration: Int? = null
 )
 
 // --- Payment Method Models ---
@@ -294,11 +338,11 @@ data class MagazineResponse(
 
 data class MagazineItem(
     @SerializedName("id") val id: Int? = null,
-    @SerializedName("maghash") val hash: String? = null,
-    @SerializedName("title") val title: String? = null,
-    @SerializedName("intro") val intro: String? = null,
-    @SerializedName("start_at") val date: String? = null,
-    @SerializedName("image_path") val image: String? = null,
+    @SerializedName("maghash", alternate = ["iahsh"]) val hash: String? = null,
+    @SerializedName("title", alternate = ["product_name"]) val title: String? = null,
+    @SerializedName("intro", alternate = ["brief_intro"]) val intro: String? = null,
+    @SerializedName("start_at", alternate = ["Startdate"]) val date: String? = null,
+    @SerializedName("image_path", alternate = ["image", "coverimage"]) val image: String? = null,
     @SerializedName("urltag") val urlTag: String? = null,
     @SerializedName("access") val hasAccess: String? = null,
     @SerializedName("publishedby") val publishedBy: String? = null,
@@ -357,7 +401,50 @@ data class OrderDetail(
     @SerializedName("planamt") val amount: String? = null,
     @SerializedName("currency") val currency: String? = null,
     @SerializedName("status") val status: String? = null,
-    @SerializedName("created_at") val createdAt: String? = null
+    @SerializedName("plstatus") val planStatus: String? = null,
+    @SerializedName("created_at") val createdAt: String? = null,
+    @SerializedName("activate_on") val activate_on: String? = null,
+    @SerializedName("end_on") val end_on: String? = null,
+    @SerializedName("url", alternate = ["payment_url", "paymenturl", "pg_url"]) val paymentUrl: String? = null,
+    @SerializedName("token", alternate = ["payment_token", "paymenttoken", "redirect_token", "tran_token", "payment_session_id", "session_id", "tran_id", "transaction_token", "access_token"]) val sessionToken: String? = null,
+    @SerializedName("redirect_url", alternate = ["redirecturl", "success_url"]) val redirectUrl: String? = null
+)
+
+// --- Entitlement Models ---
+
+data class EntitlementResponse(
+    @SerializedName("ResponseHeader") val responseHeader: Int? = null,
+    @SerializedName("Total") val total: Int? = null,
+    @SerializedName("ReseponseDetails") val responseDetails: List<EntitlementDetail>? = null
+)
+
+data class EntitlementDetail(
+    @SerializedName("success") val success: Boolean? = null,
+    @SerializedName("entitlement_id") val id: Int? = null,
+    @SerializedName("order_id") val orderId: Int? = null,
+    @SerializedName("order_no") val orderNo: String? = null,
+    @SerializedName("plan_name") val planName: String? = null,
+    @SerializedName("entitlement_type") val type: String? = null,
+    @SerializedName("duration_days") val duration: Int? = null,
+    @SerializedName("expires_at") val expiresAt: String? = null,
+    @SerializedName("status") val status: String? = null
+)
+
+data class RedeemResponse(
+    @SerializedName("ResponseHeader") val responseHeader: Int? = null,
+    @SerializedName("Total") val total: Int? = null,
+    @SerializedName("ReseponseDetails") val responseDetails: List<RedeemDetail>? = null
+)
+
+data class RedeemDetail(
+    @SerializedName("success") val success: Boolean? = null,
+    @SerializedName("status") val status: String? = null,
+    @SerializedName("subscription_id") val subscriptionId: Int? = null,
+    @SerializedName("entitlement_id") val entitlementId: Int? = null,
+    @SerializedName("user_id") val userId: Int? = null,
+    @SerializedName("recipient_user_id") val recipientUserId: Int? = null,
+    @SerializedName("sent") val sent: Boolean? = null,
+    @SerializedName("message") val message: String? = null
 )
 
 // --- QR Login Models ---

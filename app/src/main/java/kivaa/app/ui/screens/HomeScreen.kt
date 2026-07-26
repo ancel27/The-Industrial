@@ -73,6 +73,7 @@ sealed class Screen(val route: String, val title: String, val icon: Any) {
     object AskKivaa : Screen("ask_kivaa", "Ask Kivaa", Icons.Default.Message)
     object QrScanner : Screen("qr_scanner", "QR Scanner", R.drawable.qrcode)
     object SearchResults : Screen("search_results", "Search", Icons.Default.Search)
+    object Benefits : Screen("benefits", "Benefits", Icons.Default.Verified)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -164,8 +165,6 @@ fun HomeScreen(onLogout: () -> Unit) {
         )
     } else if (currentScreen == Screen.AskKivaa) {
         KivaaChatScreen(onBack = { currentScreen = Screen.ForYou })
-    } else if (currentScreen == Screen.Subscription) {
-        SubscriptionScreen(onBack = { currentScreen = Screen.ForYou })
     } else {
         Scaffold(
             topBar = {
@@ -174,11 +173,13 @@ fun HomeScreen(onLogout: () -> Unit) {
                     color = Color.White,
                     shadowElevation = 1.dp
                 ) {
-                    Column {
+                    Column(modifier = Modifier.background(Color.White)) {
+                        // Spacer to push content below the system status bar
+                        Spacer(modifier = Modifier.windowInsetsTopHeight(WindowInsets.statusBars))
+                        
                         // Main Search Row
                         Row(
                             modifier = Modifier
-                                .statusBarsPadding()
                                 .padding(horizontal = 12.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -298,11 +299,17 @@ fun HomeScreen(onLogout: () -> Unit) {
                     Screen.History -> HistoryScreen(onNewsClick = { selectedNewsHash = it }, onBack = { currentScreen = Screen.ForYou })
                     Screen.MyComments -> UserCommentsScreen(onNewsClick = { selectedNewsHash = it }, onBack = { currentScreen = Screen.ForYou })
                     Screen.MyReviews -> UserReviewsScreen(onNewsClick = { selectedNewsHash = it }, onBack = { currentScreen = Screen.ForYou })
-                    Screen.Orders -> OrderScreen(onBack = { currentScreen = Screen.ForYou })
-                    Screen.Subscription -> SubscriptionScreen(onBack = { currentScreen = Screen.ForYou })
+                    Screen.Orders -> OrderScreen(
+                        onBack = { currentScreen = Screen.ForYou },
+                        onManageBenefits = { currentScreen = Screen.Benefits }
+                    )
+                    Screen.Subscription -> SubscriptionScreen(
+                        onGoToOrders = { currentScreen = Screen.Orders }
+                    )
                     Screen.Preferences -> PreferencesScreen(onBack = { currentScreen = Screen.ForYou })
                     Screen.Exclusive -> ExclusiveScreen(onNewsClick = { selectedNewsHash = it })
                     Screen.Support -> SupportScreen(onBack = { currentScreen = Screen.ForYou })
+                    Screen.Benefits -> EntitlementsScreen(onBack = { currentScreen = Screen.ForYou })
                     Screen.QrScanner -> QrScannerScreen(
                         onQrScanned = { hash ->
                             selectedNewsHash = hash

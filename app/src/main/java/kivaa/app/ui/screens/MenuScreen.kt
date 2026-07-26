@@ -42,9 +42,9 @@ fun MenuScreen(onMenuItemClick: (String) -> Unit) {
 
     // Row 3: Account & Support
     val row3 = listOf(
+        MenuIconItem("Preferences", Icons.Outlined.Notifications),
         MenuIconItem("My Reviews", Icons.Outlined.StarOutline),
         MenuIconItem("Addresses", Icons.Outlined.LocationOn),
-        MenuIconItem("Preferences", Icons.Outlined.NotificationsNone),
         MenuIconItem("Support", Icons.Outlined.SupportAgent)
     )
 

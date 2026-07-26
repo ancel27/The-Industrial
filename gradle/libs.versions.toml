@@ -20,6 +20,7 @@ datastore = "1.1.2"
 mlkit-barcode = "17.3.0"
 camerax = "1.4.1"
 razorpay = "1.6.41"
+pinelabs = "1.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -53,6 +54,7 @@ androidx-camera-camera2 = { group = "androidx.camera", name = "camera-camera2", 
 androidx-camera-lifecycle = { group = "androidx.camera", name = "camera-lifecycle", version.ref = "camerax" }
 androidx-camera-view = { group = "androidx.camera", name = "camera-view", version.ref = "camerax" }
 razorpay-checkout = { group = "com.razorpay", name = "checkout", version.ref = "razorpay" }
+pinelabs-sdk = { group = "com.pinelabs.express_sdk", name = "express-sdk-android", version.ref = "pinelabs" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
